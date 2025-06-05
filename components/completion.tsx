@@ -134,7 +134,7 @@ export default function LeadSearchComplete() {
             }}
           >
             <p className="text-sm text-zinc-600">
-              We've found 10 leads matching your search criteria. All leads have been successfully processed and are
+              We've found leads matching your search criteria. All leads have been successfully processed and are
               ready for your review.
             </p>
           </motion.div>

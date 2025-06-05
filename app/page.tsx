@@ -49,7 +49,7 @@ export default function LeadDeskForm() {
 
   const statusMessages = [
     { icon: "🔍", message: "Searching Google Maps..." },
-    { icon: "📦", message: "10 leads found" },
+    { icon: "📦", message: "Leads found" },
     { icon: "📞", message: "Gathering contact info..." },
     { icon: "📤", message: "Pushing leads to HubSpot..." },
     { icon: "✅", message: "Done!" },
@@ -249,16 +249,9 @@ export default function LeadDeskForm() {
           <div className="w-full max-w-2xl flex flex-col items-center">
             <LeadSearchComplete />
             <div className="mt-8 w-full max-w-sm space-y-4">
-              <Button className="w-full h-14 rounded-xl font-medium text-lg bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/20 hover:shadow-pink-500/30 transition-all duration-300 text-white">
-                <span className="flex items-center gap-2">
-                  <Folder className="h-5 w-5" />
-                  View Leads
-                </span>
-              </Button>
               <Button
                 onClick={resetForm}
-                variant="outline"
-                className="w-full h-14 rounded-xl font-medium text-lg border-gray-200 hover:bg-gray-50 hover:text-pink-500 transition-colors duration-300"
+                className="w-full h-14 rounded-xl font-medium text-lg bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/20 hover:shadow-pink-500/30 transition-all duration-300 text-white"
               >
                 <span className="flex items-center gap-2">
                   <RefreshCw className="h-5 w-5" />
