@@ -1,7 +1,7 @@
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const webhookUrl = 'https://zyris.app.n8n.cloud/webhook-test/e2d897bc-c7e5-441b-9e5d-6094e0ad37f8';
+    const webhookUrl = 'https://zyris.app.n8n.cloud/webhook/9ab1f134-57fc-42f0-979e-786f43c7ef2f';
 
     const res = await fetch(webhookUrl, {
       method: 'POST',
