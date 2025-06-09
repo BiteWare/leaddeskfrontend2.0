@@ -24,6 +24,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import LeadSearchComplete from "@/components/completion"
 import { UserDropdown } from "@/components/user-dropdown"
 import Footer from "../components/footer"
@@ -46,6 +53,7 @@ export default function LeadDeskForm() {
   const [searchHistory, setSearchHistory] = useState<Array<{ businessType: string; location: string }>>([])
   const [showHistory, setShowHistory] = useState(false)
   const [dynamicMessage, setDynamicMessage] = useState("")
+  const [isBusinessTypeOpen, setIsBusinessTypeOpen] = useState(false)
 
   const statusMessages = [
     { icon: "🔍", message: "Searching Google Maps..." },
@@ -61,6 +69,14 @@ export default function LeadDeskForm() {
     "Filtering by relevance...",
     "Verifying contact information...",
     "Preparing lead data...",
+  ]
+
+  const businessTypeOptions = [
+    "Pediatric Dentist",
+    "Orthodontist",
+    "General Dentist",
+    "Dental Implant Specialist",
+    "Cosmetic Dentist"
   ]
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -316,7 +332,7 @@ export default function LeadDeskForm() {
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="max-w-xs">
-                                  Enter any business category like "Dentist", "Coffee Shop", "Plumber", etc.
+                                  Select a dental business type from the dropdown menu.
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -348,16 +364,26 @@ export default function LeadDeskForm() {
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-pink-500 transition-colors duration-300 pointer-events-none">
                           <Search className={`h-6 w-6 ${businessTypeFocused ? "text-pink-500" : ""}`} />
                         </div>
-                        <Input
-                          id="businessType"
-                          placeholder=""
-                          className="border-0 bg-transparent pl-14 pr-12 py-4 h-14 text-lg text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 relative z-10"
+                        <Select
                           value={businessType}
-                          onChange={(e) => setBusinessType(e.target.value)}
-                          onFocus={() => setBusinessTypeFocused(true)}
-                          onBlur={() => setBusinessTypeFocused(false)}
+                          onValueChange={setBusinessType}
+                          onOpenChange={(open) => {
+                            setIsBusinessTypeOpen(open)
+                            setBusinessTypeFocused(open)
+                          }}
                           disabled={isSubmitted}
-                        />
+                        >
+                          <SelectTrigger className="border-0 bg-transparent pl-14 pr-12 py-4 h-14 text-lg text-gray-900 focus:ring-0 relative z-10">
+                            <SelectValue placeholder="Select business type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pediatric Dentist">Pediatric Dentist</SelectItem>
+                            <SelectItem value="Orthodontist">Orthodontist</SelectItem>
+                            <SelectItem value="General Dentist">General Dentist</SelectItem>
+                            <SelectItem value="Dental Implant Specialist">Dental Implant Specialist</SelectItem>
+                            <SelectItem value="Cosmetic Dentist">Cosmetic Dentist</SelectItem>
+                          </SelectContent>
+                        </Select>
                         {businessType && (
                           <button
                             type="button"
@@ -371,7 +397,7 @@ export default function LeadDeskForm() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className={`space-y-2 transition-all duration-300 ${isBusinessTypeOpen ? 'mt-48' : 'mt-8'}`}>
                       <div className="flex items-center justify-between">
                         <Label htmlFor="location" className="text-base font-medium text-gray-700">
                           Location
@@ -404,13 +430,13 @@ export default function LeadDeskForm() {
                         </div>
                         <Input
                           id="location"
-                          placeholder=""
-                          className="border-0 bg-transparent pl-14 pr-12 py-4 h-14 text-lg text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 relative z-10"
+                          className="border-0 bg-transparent pl-14 pr-12 py-4 h-14 text-lg text-gray-900 focus-visible:ring-0 relative z-10"
                           value={location}
                           onChange={(e) => setLocation(e.target.value)}
                           onFocus={() => setLocationFocused(true)}
                           onBlur={() => setLocationFocused(false)}
                           disabled={isSubmitted}
+                          autoComplete="off"
                         />
                         {location && (
                           <button
@@ -469,13 +495,13 @@ export default function LeadDeskForm() {
                         </div>
                         <Input
                           id="url"
-                          placeholder=""
-                          className="border-0 bg-transparent pl-14 pr-12 py-4 h-14 text-lg text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 relative z-10"
+                          className="border-0 bg-transparent pl-14 pr-12 py-4 h-14 text-lg text-gray-900 focus-visible:ring-0 relative z-10"
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           onFocus={() => setUrlFocused(true)}
                           onBlur={() => setUrlFocused(false)}
                           disabled={isSubmitted}
+                          autoComplete="off"
                         />
                         {url && (
                           <button
