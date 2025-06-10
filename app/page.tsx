@@ -35,8 +35,11 @@ import LeadSearchComplete from "@/components/completion"
 import { UserDropdown } from "@/components/user-dropdown"
 import Footer from "../components/footer"
 import ProcessRequest from "../components/process-request"
+import { AuthGuard } from "@/components/auth-guard"
+import { useUsers } from "@/hooks/useUsers"
 
 export default function LeadDeskForm() {
+  const { user, currentUserProfile } = useUsers()
   const [businessType, setBusinessType] = useState("")
   const [location, setLocation] = useState("")
   const [url, setUrl] = useState("")
@@ -242,7 +245,8 @@ export default function LeadDeskForm() {
   }, [isSubmitted, progress, currentStep, statusMessages.length])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col">
+    <AuthGuard>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col">
       {/* Header */}
       <header className="w-full bg-white border-b border-gray-200 shadow-sm">
         <div className="w-full px-4 h-16 flex items-center justify-between">
@@ -254,7 +258,10 @@ export default function LeadDeskForm() {
               <span className="absolute top-1 right-1 h-2 w-2 bg-pink-500 rounded-full"></span>
               <span className="sr-only">Notifications</span>
             </Button>
-            <UserDropdown userName="Sarah Johnson" userEmail="sarah@zyris.com" />
+            <UserDropdown 
+              userName={user?.user_metadata?.name || user?.email?.split('@')[0] || "User"} 
+              userEmail={user?.email || ""} 
+            />
           </div>
         </div>
       </header>
@@ -606,5 +613,6 @@ export default function LeadDeskForm() {
       </div>
       <Footer />
     </div>
+    </AuthGuard>
   )
 }

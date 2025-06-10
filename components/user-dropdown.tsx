@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useUsers } from "@/hooks/useUsers"
 
 interface UserDropdownProps {
   userName: string
@@ -19,12 +20,18 @@ interface UserDropdownProps {
 
 export function UserDropdown({ userName, userEmail, userImage }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const { signOut } = useUsers()
 
   const initials = userName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
+
+  const handleSignOut = async () => {
+    await signOut()
+    setIsOpen(false)
+  }
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -62,7 +69,10 @@ export function UserDropdown({ userName, userEmail, userImage }: UserDropdownPro
           <span>Help & Support</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600 focus:bg-red-50 focus:text-red-600">
+        <DropdownMenuItem 
+          className="text-red-600 focus:bg-red-50 focus:text-red-600"
+          onClick={handleSignOut}
+        >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
