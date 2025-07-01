@@ -48,10 +48,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect to dashboard if accessing auth routes while logged in
+  // Redirect to enrich if accessing auth routes while logged in
   if (isAuthPath && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/enrich'
     return NextResponse.redirect(url)
   }
 

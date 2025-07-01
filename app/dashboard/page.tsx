@@ -46,7 +46,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Button className="w-full" onClick={() => window.location.href = '/'}>
+                  <Button className="w-full" onClick={() => window.location.href = '/enrich'}>
                     Go to LeadDesk
                   </Button>
                   <Button variant="outline" className="w-full">

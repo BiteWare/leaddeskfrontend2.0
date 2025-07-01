@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Toaster } from '@/components/ui/sonner'
 
 export const metadata: Metadata = {
   title: 'LeadDesk',
@@ -16,7 +17,10 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/Zyris Logo.png" type="image/png" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   )
 }

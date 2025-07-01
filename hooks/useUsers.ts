@@ -112,7 +112,7 @@ export function useUsers(): UseUsersReturn {
         return { error: error.message }
       }
 
-      router.push('/')
+      router.push('/enrich')
       return { error: null }
     } catch (error) {
       return { error: 'An unexpected error occurred' }
