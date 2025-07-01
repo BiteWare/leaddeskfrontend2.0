@@ -9,7 +9,7 @@ import { Upload, FileText, Users, Building2, Mail, Phone, Globe, X, CheckCircle,
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface LeadEnrichmentFormProps {
-  onEnrichLead?: (data: { email?: string; company?: string; website?: string }) => void
+  onEnrichLead?: (data: { practiceName?: string; street?: string; city?: string; state?: string }) => void
   onFileUpload?: (file: File) => void
 }
 
@@ -21,9 +21,10 @@ interface FileUploadState {
 }
 
 export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadEnrichmentFormProps) {
-  const [email, setEmail] = useState("")
-  const [company, setCompany] = useState("")
-  const [website, setWebsite] = useState("")
+  const [practiceName, setPracticeName] = useState("")
+  const [street, setStreet] = useState("")
+  const [city, setCity] = useState("")
+  const [state, setState] = useState("")
   const [fileUpload, setFileUpload] = useState<FileUploadState>({
     file: null,
     isUploading: false,
@@ -134,7 +135,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
 
   const handleEnrichLead = () => {
     if (onEnrichLead) {
-      onEnrichLead({ email, company, website })
+      onEnrichLead({ practiceName, street, city, state })
     }
   }
 
@@ -147,7 +148,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
   }
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
+    <div className="space-y-8">
       {/* Upload Section */}
       <div className="space-y-6">
         <div>
@@ -222,16 +223,6 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
                 <AlertDescription>{fileUpload.error}</AlertDescription>
               </Alert>
             )}
-            
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Supported Formats</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• CSV files with email addresses</li>
-                <li>• CSV files with company names</li>
-                <li>• CSV files with website URLs</li>
-                <li>• Maximum file size: 5MB</li>
-              </ul>
-            </div>
           </div>
         </div>
 
@@ -239,120 +230,63 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Manual Entry</h2>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email Address
+              <Label htmlFor="practiceName" className="text-sm font-medium text-gray-700">
+                Practice Name
               </Label>
               <Input 
-                id="email" 
-                placeholder="Enter email address to enrich"
+                id="practiceName" 
+                placeholder="Enter practice name to enrich"
                 className="mt-1"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={practiceName}
+                onChange={(e) => setPracticeName(e.target.value)}
               />
             </div>
-            <div>
-              <Label htmlFor="company" className="text-sm font-medium text-gray-700">
-                Company Name
-              </Label>
-              <Input 
-                id="company" 
-                placeholder="Enter company name to enrich"
-                className="mt-1"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="website" className="text-sm font-medium text-gray-700">
-                Website URL
-              </Label>
-              <Input 
-                id="website" 
-                placeholder="Enter website URL to enrich"
-                className="mt-1"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-              />
-            </div>
-            <Button 
-              className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
-              onClick={handleEnrichLead}
-              disabled={!email && !company && !website}
-            >
-              Enrich Lead
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Preview Section */}
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Enrichment Preview</h2>
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="font-medium text-gray-900">Acme Corporation</p>
-                  <p className="text-sm text-gray-500">Technology • 50-200 employees</p>
-                </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <Label htmlFor="street" className="text-sm font-medium text-gray-700">
+                  Street Address
+                </Label>
+                <Input 
+                  id="street" 
+                  placeholder="Enter street address"
+                  className="mt-1"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                />
               </div>
-              
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="font-medium text-gray-900">john.doe@acme.com</p>
-                  <p className="text-sm text-gray-500">Verified email address</p>
-                </div>
+              <div>
+                <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+                  City
+                </Label>
+                <Input 
+                  id="city" 
+                  placeholder="Enter city"
+                  className="mt-1"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
               </div>
-              
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="font-medium text-gray-900">+1 (555) 123-4567</p>
-                  <p className="text-sm text-gray-500">Direct line</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Globe className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="font-medium text-gray-900">acme.com</p>
-                  <p className="text-sm text-gray-500">Company website</p>
-                </div>
+              <div>
+                <Label htmlFor="state" className="text-sm font-medium text-gray-700">
+                  State
+                </Label>
+                <Input 
+                  id="state" 
+                  placeholder="Enter state"
+                  className="mt-1"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
               </div>
             </div>
           </div>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Enrichment Features</h2>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
-              <FileText className="h-5 w-5 text-pink-500" />
-              <div>
-                <p className="font-medium text-gray-900">Contact Information</p>
-                <p className="text-sm text-gray-500">Email, phone, and direct dial numbers</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
-              <Users className="h-5 w-5 text-pink-500" />
-              <div>
-                <p className="font-medium text-gray-900">Social Profiles</p>
-                <p className="text-sm text-gray-500">LinkedIn, Twitter, and other social media</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
-              <Building2 className="h-5 w-5 text-pink-500" />
-              <div>
-                <p className="font-medium text-gray-900">Company Details</p>
-                <p className="text-sm text-gray-500">Industry, size, location, and more</p>
-              </div>
-            </div>
-          </div>
+          <Button 
+            className="w-full mt-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
+            onClick={handleEnrichLead}
+            disabled={!practiceName && !street && !city && !state}
+          >
+            Enrich Lead
+          </Button>
         </div>
       </div>
     </div>
