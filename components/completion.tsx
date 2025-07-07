@@ -70,7 +70,7 @@ export function Checkmark({ size = 100, strokeWidth = 2, color = "currentColor",
 
 export default function LeadSearchComplete() {
   return (
-    <Card className="w-full max-w-sm mx-auto p-6 min-h-[300px] flex flex-col justify-center bg-white border-zinc-200 backdrop-blur-sm">
+    <Card className="w-full p-6 min-h-[300px] flex flex-col justify-center bg-white border-zinc-200 backdrop-blur-sm">
       <CardContent className="space-y-4 flex flex-col items-center justify-center">
         <motion.div
           className="flex justify-center"

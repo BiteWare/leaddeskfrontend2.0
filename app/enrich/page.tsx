@@ -24,57 +24,43 @@ export default function EnrichPage() {
       // Parse CSV
       const parsedCSV = parseCSV(text)
       
-      // Validate headers
-      const headerValidation = validateCSVHeaders(parsedCSV.headers)
-      
-      if (!headerValidation.isValid) {
+      // Remove header validation: allow any file
+      // Only check if there are any rows
+      if (!parsedCSV.rows || parsedCSV.rows.length === 0) {
         toast({
-          title: "Invalid CSV format",
-          description: `Missing required columns: ${headerValidation.missingColumns.join(', ')}. Please include email, company, or website columns.`,
+          title: "No data found",
+          description: "The file does not contain any data rows.",
           variant: "destructive",
         })
-        throw new Error("Invalid CSV format")
+        throw new Error("No data found")
       }
       
-      // Extract lead data
-      const leads = parsedCSV.rows.map(row => extractLeadData(row))
-      const validLeads = leads.filter(lead => lead.email || lead.company || lead.website)
-      
-      if (validLeads.length === 0) {
-        toast({
-          title: "No valid leads found",
-          description: "The CSV file doesn't contain any valid email addresses, company names, or website URLs.",
-          variant: "destructive",
-        })
-        throw new Error("No valid leads found")
-      }
-      
+      // Extract all rows as-is (no filtering)
+      // Optionally, you can log or process them here
       // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 2000))
       
       toast({
         title: "File uploaded successfully!",
-        description: `Found ${validLeads.length} leads for enrichment. Processing will begin shortly.`,
+        description: `Found ${parsedCSV.rows.length} rows for enrichment. Processing will begin shortly.`,
       })
       
-      // Here you would typically send the leads to your enrichment API
-      console.log('Processing leads:', validLeads)
+      // Here you would typically send the rows to your enrichment API
+      console.log('Processing rows:', parsedCSV.rows)
       
     } catch (error) {
-      if (error instanceof Error && error.message !== "Invalid CSV format" && error.message !== "No valid leads found") {
-        toast({
-          title: "Upload failed",
-          description: "There was an error processing your file. Please try again.",
-          variant: "destructive",
-        })
-      }
+      toast({
+        title: "Upload failed",
+        description: "There was an error processing your file. Please try again.",
+        variant: "destructive",
+      })
       throw error // Re-throw to let the component handle the error state
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const handleEnrichLead = async (data: { email?: string; company?: string; website?: string }) => {
+  const handleEnrichLead = async (data: { practiceName?: string; street?: string; city?: string; state?: string }) => {
     setIsProcessing(true)
     
     try {

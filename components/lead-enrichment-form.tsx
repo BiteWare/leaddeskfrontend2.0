@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Upload, FileText, Users, Building2, Mail, Phone, Globe, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import * as XLSX from "xlsx"
 
 interface LeadEnrichmentFormProps {
   onEnrichLead?: (data: { practiceName?: string; street?: string; city?: string; state?: string }) => void
@@ -31,27 +32,27 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
     error: null,
     success: false
   })
+  const [parsedFileRows, setParsedFileRows] = useState<any[] | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const validateFile = (file: File): string | null => {
-    // Check file type
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      return "Please upload a CSV file"
+    // Allow CSV and Excel files
+    const allowedExtensions = [".csv", ".xls", ".xlsx"]
+    const fileName = file.name.toLowerCase()
+    if (!allowedExtensions.some(ext => fileName.endsWith(ext))) {
+      return "Please upload a CSV or Excel file (.csv, .xls, .xlsx)"
     }
-    
-    // Check file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    // Check file size (10MB limit for Excel)
+    const maxSize = 10 * 1024 * 1024 // 10MB
     if (file.size > maxSize) {
-      return "File size must be less than 5MB"
+      return "File size must be less than 10MB"
     }
-    
     return null
   }
 
   const handleFileSelect = useCallback(async (file: File) => {
     const error = validateFile(file)
-    
     if (error) {
       setFileUpload({
         file: null,
@@ -59,21 +60,36 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
         error,
         success: false
       })
+      setParsedFileRows(null)
       return
     }
-
     setFileUpload({
       file,
       isUploading: true,
       error: null,
       success: false
     })
-
     try {
-      if (onFileUpload) {
-        await onFileUpload(file)
+      let csvFile = file
+      const fileName = file.name.toLowerCase()
+      if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+        const data = await file.arrayBuffer()
+        const workbook = XLSX.read(data, { type: 'array' })
+        const firstSheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[firstSheetName]
+        const csv = XLSX.utils.sheet_to_csv(worksheet)
+        csvFile = new File([csv], file.name.replace(/\.(xls|xlsx)$/i, '.csv'), { type: 'text/csv' })
       }
-      
+      // Parse CSV to rows and store in state
+      const text = await csvFile.text()
+      // Use the same parseCSV as in the enrichment page
+      // We'll import it here
+      const { parseCSV } = await import("@/utils/csv-parser")
+      const parsedCSV = parseCSV(text)
+      setParsedFileRows(parsedCSV.rows)
+      if (onFileUpload) {
+        await onFileUpload(csvFile)
+      }
       setFileUpload(prev => ({
         ...prev,
         isUploading: false,
@@ -85,6 +101,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
         isUploading: false,
         error: "Failed to upload file. Please try again."
       }))
+      setParsedFileRows(null)
     }
   }, [onFileUpload])
 
@@ -123,6 +140,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       error: null,
       success: false
     })
+    setParsedFileRows(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -133,7 +151,22 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
     fileInputRef.current?.click()
   }
 
-  const handleEnrichLead = () => {
+  const handleEnrichLead = async () => {
+    // If a file was uploaded and parsed, POST its rows to the API
+    if (parsedFileRows && parsedFileRows.length > 0) {
+      try {
+        const response = await fetch("/api/submit-leaddesk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows: parsedFileRows })
+        })
+        if (!response.ok) throw new Error("API request failed")
+        // Optionally, show a success message or handle response
+      } catch (err) {
+        // Optionally, show an error message
+      }
+    }
+    // Also call the manual enrich handler if present
     if (onEnrichLead) {
       onEnrichLead({ practiceName, street, city, state })
     }
@@ -197,11 +230,11 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
                   <p className="text-gray-600 mb-2">
                     {isDragOver ? "Drop your CSV file here" : "Drag and drop your CSV file here"}
                   </p>
-                  <p className="text-sm text-gray-500 mb-4">or click to browse</p>
+                  <p className="text-sm text-gray-500 mb-4">or click to browse (CSV, XLS, XLSX)</p>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".csv"
+                    accept=".csv,.xls,.xlsx"
                     onChange={handleFileInputChange}
                     className="hidden"
                     id="file-upload"
@@ -283,7 +316,15 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
           <Button 
             className="w-full mt-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
             onClick={handleEnrichLead}
-            disabled={!practiceName && !street && !city && !state}
+            disabled={
+              !(
+                (parsedFileRows && parsedFileRows.length > 0) ||
+                practiceName ||
+                street ||
+                city ||
+                state
+              )
+            }
           >
             Enrich Lead
           </Button>
