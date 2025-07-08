@@ -36,6 +36,50 @@ export interface Database {
         }
         Relationships: []
       }
+      batch_runs: {
+        Row: {
+          id: string
+          user_id: string
+          filename: string
+          status: string
+          started_at: string | null
+          finished_at: string | null
+          result_url: string | null
+          error_message: string | null
+          meta: Json | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          filename: string
+          status?: string
+          started_at?: string | null
+          finished_at?: string | null
+          result_url?: string | null
+          error_message?: string | null
+          meta?: Json | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          filename?: string
+          status?: string
+          started_at?: string | null
+          finished_at?: string | null
+          result_url?: string | null
+          error_message?: string | null
+          meta?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_runs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -135,4 +179,8 @@ export type Enums<
 // Convenience types
 export type User = Tables<'users'>
 export type UserInsert = TablesInsert<'users'>
-export type UserUpdate = TablesUpdate<'users'> 
+export type UserUpdate = TablesUpdate<'users'>
+
+export type BatchRun = Tables<'batch_runs'>
+export type BatchRunInsert = TablesInsert<'batch_runs'>
+export type BatchRunUpdate = TablesUpdate<'batch_runs'> 

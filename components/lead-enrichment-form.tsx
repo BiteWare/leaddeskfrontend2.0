@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Upload, FileText, Users, Building2, Mail, Phone, Globe, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import * as XLSX from "xlsx"
+import { useUsers, useCreateBatchRun, useUpdateBatchRun } from "@/hooks"
 
 interface LeadEnrichmentFormProps {
   onEnrichLead?: (data: { practiceName?: string; street?: string; city?: string; state?: string }) => void
@@ -22,6 +23,10 @@ interface FileUploadState {
 }
 
 export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadEnrichmentFormProps) {
+  const { user } = useUsers()
+  const { createBatchRun } = useCreateBatchRun()
+  const { updateBatchRun } = useUpdateBatchRun()
+  
   const [practiceName, setPracticeName] = useState("")
   const [street, setStreet] = useState("")
   const [city, setCity] = useState("")
@@ -34,6 +39,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
   })
   const [parsedFileRows, setParsedFileRows] = useState<any[] | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [currentBatchRunId, setCurrentBatchRunId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const validateFile = (file: File): string | null => {
@@ -70,6 +76,18 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       success: false
     })
     try {
+      // Create batch run record if user is authenticated
+      let batchRunId: string | null = null
+      if (user?.id) {
+        const batchRun = await createBatchRun(user.id, file.name, {
+          fileSize: file.size,
+          fileType: file.type,
+          rowCount: null // Will be updated after parsing
+        })
+        batchRunId = batchRun?.id || null
+        setCurrentBatchRunId(batchRunId)
+      }
+
       let csvFile = file
       const fileName = file.name.toLowerCase()
       if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
@@ -87,6 +105,19 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       const { parseCSV } = await import("@/utils/csv-parser")
       const parsedCSV = parseCSV(text)
       setParsedFileRows(parsedCSV.rows)
+      
+      // Update batch run with row count if it exists
+      if (batchRunId) {
+        await updateBatchRun(batchRunId, {
+          meta: {
+            fileSize: file.size,
+            fileType: file.type,
+            rowCount: parsedCSV.rows.length,
+            parsedAt: new Date().toISOString()
+          }
+        })
+      }
+      
       if (onFileUpload) {
         await onFileUpload(csvFile)
       }
@@ -96,6 +127,15 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
         success: true
       }))
     } catch (error) {
+      // Update batch run with error if it exists
+      if (currentBatchRunId) {
+        await updateBatchRun(currentBatchRunId, {
+          status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Failed to process file',
+          finished_at: new Date().toISOString()
+        })
+      }
+      
       setFileUpload(prev => ({
         ...prev,
         isUploading: false,
@@ -103,7 +143,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       }))
       setParsedFileRows(null)
     }
-  }, [onFileUpload])
+  }, [onFileUpload, user?.id, createBatchRun, updateBatchRun, currentBatchRunId])
 
   const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -141,6 +181,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       success: false
     })
     setParsedFileRows(null)
+    setCurrentBatchRunId(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -152,6 +193,14 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
   }
 
   const handleEnrichLead = async () => {
+    // Update batch run status to processing if it exists
+    if (currentBatchRunId) {
+      await updateBatchRun(currentBatchRunId, {
+        status: 'processing',
+        started_at: new Date().toISOString()
+      })
+    }
+
     // If a file was uploaded and parsed, POST its rows to the API
     if (parsedFileRows && parsedFileRows.length > 0) {
       try {
@@ -161,8 +210,25 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
           body: JSON.stringify({ rows: parsedFileRows })
         })
         if (!response.ok) throw new Error("API request failed")
+        
+        // Update batch run status to completed if successful
+        if (currentBatchRunId) {
+          await updateBatchRun(currentBatchRunId, {
+            status: 'completed',
+            finished_at: new Date().toISOString(),
+            result_url: null // Could be updated with actual result URL if available
+          })
+        }
         // Optionally, show a success message or handle response
       } catch (err) {
+        // Update batch run status to failed if there's an error
+        if (currentBatchRunId) {
+          await updateBatchRun(currentBatchRunId, {
+            status: 'failed',
+            error_message: err instanceof Error ? err.message : 'API request failed',
+            finished_at: new Date().toISOString()
+          })
+        }
         // Optionally, show an error message
       }
     }
