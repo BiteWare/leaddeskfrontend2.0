@@ -80,6 +80,62 @@ export interface Database {
           }
         ]
       }
+      practice_scrapes: {
+        Row: {
+          id: string
+          batch_id: string
+          practice_name: string
+          full_address: string
+          street: string | null
+          city: string | null
+          state: string | null
+          zip: string | null
+          scraped_data: Json | null
+          scraped_at: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          batch_id: string
+          practice_name: string
+          full_address: string
+          street?: string | null
+          city?: string | null
+          state?: string | null
+          zip?: string | null
+          scraped_data?: Json | null
+          scraped_at?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          batch_id?: string
+          practice_name?: string
+          full_address?: string
+          street?: string | null
+          city?: string | null
+          state?: string | null
+          zip?: string | null
+          scraped_data?: Json | null
+          scraped_at?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_scrapes_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batch_runs"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -183,4 +239,8 @@ export type UserUpdate = TablesUpdate<'users'>
 
 export type BatchRun = Tables<'batch_runs'>
 export type BatchRunInsert = TablesInsert<'batch_runs'>
-export type BatchRunUpdate = TablesUpdate<'batch_runs'> 
+export type BatchRunUpdate = TablesUpdate<'batch_runs'>
+
+export type PracticeScrape = Tables<'practice_scrapes'>
+export type PracticeScrapeInsert = TablesInsert<'practice_scrapes'>
+export type PracticeScrapeUpdate = TablesUpdate<'practice_scrapes'> 

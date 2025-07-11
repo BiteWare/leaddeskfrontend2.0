@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Upload, FileText, Users, Building2, Mail, Phone, Globe, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import * as XLSX from "xlsx"
-import { useUsers, useCreateBatchRun, useUpdateBatchRun } from "@/hooks"
+import { useUsers, useCreateBatchRun, useUpdateBatchRun, usePracticeScrapes } from "@/hooks"
+import { buildFullAddress, isValidFreshScrape } from "@/utils/practice-utils"
 
 interface LeadEnrichmentFormProps {
   onEnrichLead?: (data: { practiceName?: string; street?: string; city?: string; state?: string }) => void
@@ -22,10 +23,17 @@ interface FileUploadState {
   success: boolean
 }
 
+interface CachedDataState {
+  found: boolean
+  data: any | null
+  loading: boolean
+}
+
 export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadEnrichmentFormProps) {
   const { user } = useUsers()
   const { createBatchRun } = useCreateBatchRun()
   const { updateBatchRun } = useUpdateBatchRun()
+  const { getPracticeScrape, upsertPracticeScrape } = usePracticeScrapes()
   
   const [practiceName, setPracticeName] = useState("")
   const [street, setStreet] = useState("")
@@ -40,6 +48,12 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
   const [parsedFileRows, setParsedFileRows] = useState<any[] | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [currentBatchRunId, setCurrentBatchRunId] = useState<string | null>(null)
+  const [cachedData, setCachedData] = useState<CachedDataState>({
+    found: false,
+    data: null,
+    loading: false
+  })
+  const [isEnriching, setIsEnriching] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const validateFile = (file: File): string | null => {
@@ -56,6 +70,65 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
     }
     return null
   }
+
+  /**
+   * Check for cached practice data before enrichment
+   */
+  const checkCachedData = useCallback(async () => {
+    if (!practiceName || (!street && !city && !state)) {
+      setCachedData({ found: false, data: null, loading: false })
+      return
+    }
+
+    setCachedData(prev => ({ ...prev, loading: true }))
+    
+    try {
+      const fullAddress = buildFullAddress(street, city, state)
+      const cachedScrape = await getPracticeScrape(practiceName, fullAddress)
+      
+      if (isValidFreshScrape(cachedScrape)) {
+        setCachedData({
+          found: true,
+          data: cachedScrape?.scraped_data,
+          loading: false
+        })
+        return cachedScrape
+      } else {
+        setCachedData({ found: false, data: null, loading: false })
+        return null
+      }
+    } catch (error) {
+      console.error('Error checking cached data:', error)
+      setCachedData({ found: false, data: null, loading: false })
+      return null
+    }
+  }, [practiceName, street, city, state, getPracticeScrape])
+
+  /**
+   * Save enrichment results to cache
+   */
+  const saveToCache = useCallback(async (scrapedData: any) => {
+    if (!currentBatchRunId || !practiceName) return
+
+    try {
+      const fullAddress = buildFullAddress(street, city, state)
+      await upsertPracticeScrape({
+        batch_id: currentBatchRunId,
+        practice_name: practiceName,
+        full_address: fullAddress,
+        street: street || null,
+        city: city || null,
+        state: state || null,
+        zip: null, // Could be extracted from address if needed
+        scraped_data: scrapedData,
+        scraped_at: new Date().toISOString(),
+        status: 'completed'
+      })
+    } catch (error) {
+      console.error('Error saving to cache:', error)
+      // Don't throw - caching failure shouldn't break the main flow
+    }
+  }, [currentBatchRunId, practiceName, street, city, state, upsertPracticeScrape])
 
   const handleFileSelect = useCallback(async (file: File) => {
     const error = validateFile(file)
@@ -193,48 +266,90 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
   }
 
   const handleEnrichLead = async () => {
-    // Update batch run status to processing if it exists
-    if (currentBatchRunId) {
-      await updateBatchRun(currentBatchRunId, {
-        status: 'processing',
-        started_at: new Date().toISOString()
-      })
+    // Check if user is authenticated
+    if (!user?.id) {
+      console.error('User not authenticated')
+      return
     }
 
-    // If a file was uploaded and parsed, POST its rows to the API
-    if (parsedFileRows && parsedFileRows.length > 0) {
-      try {
-        const response = await fetch("/api/submit-leaddesk", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rows: parsedFileRows })
-        })
-        if (!response.ok) throw new Error("API request failed")
-        
-        // Update batch run status to completed if successful
-        if (currentBatchRunId) {
-          await updateBatchRun(currentBatchRunId, {
-            status: 'completed',
-            finished_at: new Date().toISOString(),
-            result_url: null // Could be updated with actual result URL if available
-          })
-        }
-        // Optionally, show a success message or handle response
-      } catch (err) {
-        // Update batch run status to failed if there's an error
-        if (currentBatchRunId) {
-          await updateBatchRun(currentBatchRunId, {
-            status: 'failed',
-            error_message: err instanceof Error ? err.message : 'API request failed',
-            finished_at: new Date().toISOString()
-          })
-        }
-        // Optionally, show an error message
+    setIsEnriching(true)
+    
+    try {
+      // Check for cached data first
+      const cachedScrape = await checkCachedData()
+      
+      if (cachedScrape) {
+        // Use cached data
+        console.log('Using cached data:', cachedScrape.scraped_data)
+        // You could display the cached data here or pass it to a callback
+        return
       }
-    }
-    // Also call the manual enrich handler if present
-    if (onEnrichLead) {
-      onEnrichLead({ practiceName, street, city, state })
+
+      // Update batch run status to processing if it exists
+      if (currentBatchRunId) {
+        await updateBatchRun(currentBatchRunId, {
+          status: 'processing',
+          started_at: new Date().toISOString()
+        })
+      }
+
+      // If a file was uploaded and parsed, POST its rows to the API
+      if (parsedFileRows && parsedFileRows.length > 0) {
+        try {
+          // Get the Supabase access token
+          let accessToken = undefined;
+          if (user) {
+            const { data: { session } } = await import('@/utils/supabase-client').then(m => m.supabase.auth.getSession());
+            accessToken = session?.access_token;
+          }
+          const response = await fetch("/api/submit-leaddesk", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+            },
+            credentials: "include", // Send cookies for auth
+            body: JSON.stringify({ 
+              filename: fileUpload.file?.name || 'uploaded_file.csv',
+              rows: parsedFileRows 
+            })
+          })
+          if (!response.ok) throw new Error("API request failed")
+          
+          const result = await response.json()
+          
+          // Save results to cache
+          await saveToCache(result)
+          
+          // Update batch run status to completed if successful
+          if (currentBatchRunId) {
+            await updateBatchRun(currentBatchRunId, {
+              status: 'completed',
+              finished_at: new Date().toISOString(),
+              result_url: null // Could be updated with actual result URL if available
+            })
+          }
+          // Optionally, show a success message or handle response
+        } catch (err) {
+          // Update batch run status to failed if there's an error
+          if (currentBatchRunId) {
+            await updateBatchRun(currentBatchRunId, {
+              status: 'failed',
+              error_message: err instanceof Error ? err.message : 'API request failed',
+              finished_at: new Date().toISOString()
+            })
+          }
+          // Optionally, show an error message
+        }
+      }
+      // Also call the manual enrich handler if present
+      if (onEnrichLead) {
+        onEnrichLead({ practiceName, street, city, state })
+      }
+    } catch (error) {
+      console.error('Error during enrichment:', error)
+    } finally {
+      setIsEnriching(false)
     }
   }
 
@@ -379,10 +494,30 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
               </div>
             </div>
           </div>
+
+          {/* Cache Status Display */}
+          {cachedData.loading && (
+            <Alert className="mt-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertDescription>Checking for cached data...</AlertDescription>
+            </Alert>
+          )}
+
+          {cachedData.found && (
+            <Alert className="mt-4 bg-green-50 border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Found fresh cached data for this practice. Using cached results instead of re-scraping.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button 
             className="w-full mt-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
             onClick={handleEnrichLead}
             disabled={
+              isEnriching ||
+              !user?.id ||
               !(
                 (parsedFileRows && parsedFileRows.length > 0) ||
                 practiceName ||
@@ -392,7 +527,14 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
               )
             }
           >
-            Enrich Lead
+            {isEnriching ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Enriching...
+              </>
+            ) : (
+              'Enrich Lead'
+            )}
           </Button>
         </div>
       </div>
