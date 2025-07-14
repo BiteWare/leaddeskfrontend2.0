@@ -8,7 +8,7 @@ import { Users } from "lucide-react"
 import Footer from "@/components/footer"
 import LeadEnrichmentForm from "@/components/lead-enrichment-form"
 import { useToast } from "@/hooks/use-toast"
-import { parseCSV, validateCSVHeaders, extractLeadData } from "@/utils/csv-parser"
+import { parseCSV, validateLeadEnrichmentCSV, extractLeadData } from "@/utils/csv-parser"
 
 export default function EnrichPage() {
   const { toast } = useToast()
@@ -24,15 +24,15 @@ export default function EnrichPage() {
       // Parse CSV
       const parsedCSV = parseCSV(text)
       
-      // Remove header validation: allow any file
-      // Only check if there are any rows
-      if (!parsedCSV.rows || parsedCSV.rows.length === 0) {
+      // Validate the CSV format for lead enrichment
+      const validation = validateLeadEnrichmentCSV(parsedCSV)
+      if (!validation.isValid) {
         toast({
-          title: "No data found",
-          description: "The file does not contain any data rows.",
+          title: "Invalid file format",
+          description: validation.errors.join('. '),
           variant: "destructive",
         })
-        throw new Error("No data found")
+        throw new Error(validation.errors.join('. '))
       }
       
       // Extract all rows as-is (no filtering)
@@ -90,23 +90,9 @@ export default function EnrichPage() {
     <AuthGuard>
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col">
         <AppHeader />
-        
         {/* Main Content */}
         <div className="flex-1 flex flex-col items-center justify-start px-4 py-8 pt-24">
           <Card className="w-full max-w-4xl border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-4 flex flex-col items-center px-8 pt-8">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-pink-500 text-white p-3 rounded-lg shadow-lg shadow-pink-500/20">
-                  <Users className="h-9 w-9" />
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900">Lead Enrichment</h1>
-              </div>
-              <p className="text-gray-600 text-center max-w-2xl">
-                Enhance your existing leads with additional contact information, social media profiles, 
-                and business details to improve your outreach campaigns.
-              </p>
-            </CardHeader>
-
             <CardContent className="p-8">
               <LeadEnrichmentForm 
                 onEnrichLead={handleEnrichLead}
@@ -115,7 +101,6 @@ export default function EnrichPage() {
             </CardContent>
           </Card>
         </div>
-        
         <Footer />
       </div>
     </AuthGuard>

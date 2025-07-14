@@ -71,12 +71,12 @@ function parseCSVLine(line: string): string[] {
 }
 
 export function validateCSVHeaders(headers: string[]): { isValid: boolean; missingColumns: string[] } {
-  const requiredColumns = ['email', 'company', 'website']
+  const requiredColumns = ['Location Name', 'Ship Street', 'Ship City', 'Ship State']
   const missingColumns: string[] = []
   
   for (const column of requiredColumns) {
     if (!headers.some(header => 
-      header.toLowerCase().includes(column.toLowerCase())
+      header.trim() === column
     )) {
       missingColumns.push(column)
     }
@@ -89,17 +89,62 @@ export function validateCSVHeaders(headers: string[]): { isValid: boolean; missi
 }
 
 export function extractLeadData(row: CSVRow): {
-  email?: string
-  company?: string
-  website?: string
+  practiceName?: string
+  street?: string
+  city?: string
+  state?: string
 } {
-  const email = row.email || row.Email || row.EMAIL || ''
-  const company = row.company || row.Company || row.COMPANY || row.name || row.Name || row.NAME || ''
-  const website = row.website || row.Website || row.WEBSITE || row.url || row.Url || row.URL || ''
+  const practiceName = row['Location Name'] || ''
+  const street = row['Ship Street'] || ''
+  const city = row['Ship City'] || ''
+  const state = row['Ship State'] || ''
   
   return {
-    email: email.trim() || undefined,
-    company: company.trim() || undefined,
-    website: website.trim() || undefined
+    practiceName: practiceName.trim() || undefined,
+    street: street.trim() || undefined,
+    city: city.trim() || undefined,
+    state: state.trim() || undefined
+  }
+}
+
+/**
+ * Validate that a CSV file has the correct format for lead enrichment
+ * @param parsedCSV - The parsed CSV data
+ * @returns object - Validation result with success status and any errors
+ */
+export function validateLeadEnrichmentCSV(parsedCSV: ParsedCSV): { 
+  isValid: boolean; 
+  errors: string[] 
+} {
+  const errors: string[] = []
+  
+  // Check headers
+  const headerValidation = validateCSVHeaders(parsedCSV.headers)
+  if (!headerValidation.isValid) {
+    errors.push(`Missing required columns: ${headerValidation.missingColumns.join(', ')}`)
+  }
+  
+  // Check row count
+  if (parsedCSV.rows.length === 0) {
+    errors.push('No data rows found in the file')
+  } else if (parsedCSV.rows.length > 20) {
+    errors.push('Maximum 20 rows allowed per upload')
+  }
+  
+  // Check data completeness
+  for (const [i, row] of parsedCSV.rows.entries()) {
+    const rowNumber = i + 2 // +2 because we start from row 2 (after header)
+    const requiredFields = ['Location Name', 'Ship Street', 'Ship City', 'Ship State']
+    
+    for (const field of requiredFields) {
+      if (!row[field] || row[field].trim() === '') {
+        errors.push(`Row ${rowNumber} is missing data in "${field}"`)
+      }
+    }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
   }
 } 

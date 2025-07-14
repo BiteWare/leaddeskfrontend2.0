@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Upload, FileText, Users, Building2, Mail, Phone, Globe, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { Upload, FileText, Download, Users, Building2, Mail, Phone, Globe, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import * as XLSX from "xlsx"
 import { useUsers, usePracticeScrapes } from "@/hooks"
 import { buildFullAddress, buildInputAddress, isValidFreshScrape } from "@/utils/practice-utils"
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 
 interface LeadEnrichmentFormProps {
   onEnrichLead?: (data: { practiceName?: string; street?: string; city?: string; state?: string }) => void
@@ -60,10 +61,12 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
     if (!allowedExtensions.some(ext => fileName.endsWith(ext))) {
       return "Please upload a CSV or Excel file (.csv, .xls, .xlsx)"
     }
-    // Check file size (10MB limit for Excel)
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    // Check file size (20MB limit for CSV, 10MB for Excel)
+    const fileNameLower = file.name.toLowerCase()
+    const isCSV = fileNameLower.endsWith('.csv')
+    const maxSize = isCSV ? 20 * 1024 * 1024 : 10 * 1024 * 1024 // 20MB for CSV, 10MB for Excel
     if (file.size > maxSize) {
-      return "File size must be less than 10MB"
+      return `File size must be less than ${isCSV ? '20MB' : '10MB'}`
     }
     return null
   }
@@ -133,8 +136,10 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
   }, [user?.id, practiceName, street, city, state, upsertPracticeScrape])
 
   const handleFileSelect = useCallback(async (file: File) => {
+    console.log('File selected:', file.name, file.type, file.size) // Debug log
     const error = validateFile(file)
     if (error) {
+      console.log('File validation error:', error) // Debug log
       setFileUpload({
         file: null,
         isUploading: false,
@@ -153,20 +158,36 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
     try {
       let csvFile = file
       const fileName = file.name.toLowerCase()
+      console.log('Processing file:', fileName) // Debug log
+      
       if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+        console.log('Converting Excel file to CSV') // Debug log
         const data = await file.arrayBuffer()
         const workbook = XLSX.read(data, { type: 'array' })
         const firstSheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[firstSheetName]
         const csv = XLSX.utils.sheet_to_csv(worksheet)
         csvFile = new File([csv], file.name.replace(/\.(xls|xlsx)$/i, '.csv'), { type: 'text/csv' })
+      } else {
+        console.log('Processing CSV file directly') // Debug log
       }
+      
       // Parse CSV to rows and store in state
       const text = await csvFile.text()
+      console.log('CSV text length:', text.length) // Debug log
+      
       // Use the same parseCSV as in the enrichment page
       // We'll import it here
-      const { parseCSV } = await import("@/utils/csv-parser")
+      const { parseCSV, validateLeadEnrichmentCSV } = await import("@/utils/csv-parser")
       const parsedCSV = parseCSV(text)
+      console.log('Parsed CSV:', parsedCSV.headers, parsedCSV.rows.length) // Debug log
+      
+      // File format and content validation using the new utility function
+      const validation = validateLeadEnrichmentCSV(parsedCSV)
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join('. '))
+      }
+      
       setParsedFileRows(parsedCSV.rows)
       
       if (onFileUpload) {
@@ -181,7 +202,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       setFileUpload(prev => ({
         ...prev,
         isUploading: false,
-        error: "Failed to upload file. Please try again."
+        error: error instanceof Error ? error.message : "Failed to upload file. Please try again."
       }))
       setParsedFileRows(null)
     }
@@ -308,10 +329,40 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
 
   return (
     <div className="space-y-8">
-      {/* Upload Section */}
+      {/* Form Header */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-pink-500 text-white p-3 rounded-lg shadow-lg shadow-pink-500/20">
+            <Users className="h-9 w-9" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Lead Enrichment</h1>
+        </div>
+      </div>
+      {/* File Requirements at the top */}
+      <div className="mb-6 p-4 bg-pink-50 border border-pink-200 rounded-lg flex items-center justify-between">
+        <div>
+          <p className="text-base font-semibold text-pink-700 mb-1">File requirements:</p>
+          <ul className="text-sm text-pink-800 list-disc ml-5 mb-1">
+            <li>Supported formats: <span className="font-medium">CSV, XLS, XLSX</span></li>
+            <li>Must include columns: <span className="font-medium">Location Name, Ship Street, Ship City, Ship State</span></li>
+            <li>Maximum <span className="font-medium">20 rows</span> per upload</li>
+            <li>Maximum file size: <span className="font-medium">20MB for CSV, 10MB for Excel</span></li>
+          </ul>
+        </div>
+        <a
+          href="/enrichment-template.xlsx"
+          download
+          aria-label="Download enrichment template"
+          title="Download enrichment template"
+          className="ml-4 p-2 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 hover:text-pink-800 transition-colors border border-pink-200 shadow-sm"
+        >
+          <Download className="h-5 w-5" />
+        </a>
+      </div>
+
+      {/* Upload Section (no header) */}
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Leads</h2>
           <div className="space-y-4">
             <div 
               className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
@@ -336,7 +387,12 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
                   <div>
                     <p className="text-green-600 font-medium mb-2">File uploaded successfully!</p>
                     <p className="text-sm text-gray-600 mb-2">{fileUpload.file.name}</p>
-                    <p className="text-xs text-gray-500">{formatFileSize(fileUpload.file.size)}</p>
+                    <p className="text-xs text-gray-500 mb-2">{formatFileSize(fileUpload.file.size)}</p>
+                    {parsedFileRows && (
+                      <p className="text-xs text-green-600 font-medium">
+                        ✓ {parsedFileRows.length} row{parsedFileRows.length !== 1 ? 's' : ''} ready for enrichment
+                      </p>
+                    )}
                   </div>
                   <Button 
                     variant="outline" 
@@ -354,9 +410,10 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
                     isDragOver ? "text-pink-500" : "text-gray-400"
                   }`} />
                   <p className="text-gray-600 mb-2">
-                    {isDragOver ? "Drop your CSV file here" : "Drag and drop your CSV file here"}
+                    {isDragOver ? "Drop your lead file here" : "Drag and drop your lead file here"}
                   </p>
                   <p className="text-sm text-gray-500 mb-4">or click to browse (CSV, XLS, XLSX)</p>
+                  <p className="text-xs text-gray-400 mb-4">Use the template above for correct formatting</p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -385,80 +442,88 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
           </div>
         </div>
 
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Manual Entry</h2>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="practiceName" className="text-sm font-medium text-gray-700">
-                Practice Name
-              </Label>
-              <Input 
-                id="practiceName" 
-                placeholder="Enter practice name to enrich"
-                className="mt-1"
-                value={practiceName}
-                onChange={(e) => setPracticeName(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <Label htmlFor="street" className="text-sm font-medium text-gray-700">
-                  Street Address
-                </Label>
-                <Input 
-                  id="street" 
-                  placeholder="Enter street address"
-                  className="mt-1"
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="city" className="text-sm font-medium text-gray-700">
-                  City
-                </Label>
-                <Input 
-                  id="city" 
-                  placeholder="Enter city"
-                  className="mt-1"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="state" className="text-sm font-medium text-gray-700">
-                  State
-                </Label>
-                <Input 
-                  id="state" 
-                  placeholder="Enter state"
-                  className="mt-1"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Manual Entry Accordion */}
+        <div className="mt-2">
+          <Accordion type="single" collapsible className="w-full bg-white rounded-lg border border-gray-200 shadow-sm">
+            <AccordionItem value="manual-entry">
+              <AccordionTrigger className="px-4 py-3 font-semibold text-gray-800">Manual Entry</AccordionTrigger>
+              <AccordionContent className="p-4 space-y-4">
+                <div>
+                  <Label htmlFor="practiceName" className="text-sm font-medium text-gray-700">
+                    Practice Name
+                  </Label>
+                  <Input 
+                    id="practiceName" 
+                    placeholder="Enter practice name to enrich"
+                    className="mt-1"
+                    value={practiceName}
+                    onChange={(e) => setPracticeName(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <Label htmlFor="street" className="text-sm font-medium text-gray-700">
+                      Street Address
+                    </Label>
+                    <Input 
+                      id="street" 
+                      placeholder="Enter street address"
+                      className="mt-1"
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+                      City
+                    </Label>
+                    <Input 
+                      id="city" 
+                      placeholder="Enter city"
+                      className="mt-1"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-sm font-medium text-gray-700">
+                      State
+                    </Label>
+                    <Input 
+                      id="state" 
+                      placeholder="Enter state"
+                      className="mt-1"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                    />
+                  </div>
+                </div>
 
-          {/* Cache Status Display */}
-          {cachedData.loading && (
-            <Alert className="mt-4">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <AlertDescription>Checking for cached data...</AlertDescription>
-            </Alert>
-          )}
+                {/* Cache Status Display */}
+                {cachedData.loading && (
+                  <Alert className="mt-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <AlertDescription>Checking for cached data...</AlertDescription>
+                  </Alert>
+                )}
 
-          {cachedData.found && (
-            <Alert className="mt-4 bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                Found fresh cached data for this practice. Using cached results instead of re-scraping.
-              </AlertDescription>
-            </Alert>
-          )}
+                {cachedData.found && (
+                  <Alert className="mt-4 bg-green-50 border-green-200">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      Found fresh cached data for this practice. Using cached results instead of re-scraping.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
 
+        {/* Enrich Lead Button at the bottom of the form */}
+        <div className="flex justify-center mt-6">
           <Button 
-            className="w-full mt-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
+            className="w-1/2 max-w-xs rounded-lg bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
             onClick={handleEnrichLead}
             disabled={
               isEnriching ||
