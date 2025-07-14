@@ -5,7 +5,7 @@ import type { PracticeScrape, PracticeScrapeInsert, PracticeScrapeUpdate } from 
 interface UsePracticeScrapesReturn {
   getPracticeScrape: (practiceName: string, fullAddress: string) => Promise<PracticeScrape | null>
   upsertPracticeScrape: (data: PracticeScrapeInsert) => Promise<PracticeScrape | null>
-  getPracticeScrapesForBatch: (batchId: string) => Promise<PracticeScrape[]>
+  getPracticeScrapesForUser: (userId: string) => Promise<PracticeScrape[]>
   loading: boolean
   error: string | null
 }
@@ -31,11 +31,18 @@ export function usePracticeScrapes(): UsePracticeScrapesReturn {
       setLoading(true)
       setError(null)
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+
       const { data, error: fetchError } = await supabase
         .from('practice_scrapes')
         .select('*')
-        .eq('practice_name', practiceName)
-        .eq('full_address', fullAddress)
+        .eq('user_id', user.id)
+        .eq('input_name', practiceName)
+        .eq('input_street', fullAddress)
         .single()
 
       if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found"
@@ -70,7 +77,7 @@ export function usePracticeScrapes(): UsePracticeScrapesReturn {
           ...data,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'practice_name,full_address'
+          onConflict: 'user_id,input_name,input_street'
         })
         .select()
         .single()
@@ -90,12 +97,12 @@ export function usePracticeScrapes(): UsePracticeScrapesReturn {
   }, [])
 
   /**
-   * Fetch all practice scrapes for a specific batch
-   * @param batchId - The batch run ID
-   * @returns Promise<PracticeScrape[]> - Array of practice scrapes for the batch
+   * Fetch all practice scrapes for a specific user
+   * @param userId - The user ID
+   * @returns Promise<PracticeScrape[]> - Array of practice scrapes for the user
    */
-  const getPracticeScrapesForBatch = useCallback(async (
-    batchId: string
+  const getPracticeScrapesForUser = useCallback(async (
+    userId: string
   ): Promise<PracticeScrape[]> => {
     try {
       setLoading(true)
@@ -104,7 +111,7 @@ export function usePracticeScrapes(): UsePracticeScrapesReturn {
       const { data, error: fetchError } = await supabase
         .from('practice_scrapes')
         .select('*')
-        .eq('batch_id', batchId)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
       if (fetchError) {
@@ -113,7 +120,7 @@ export function usePracticeScrapes(): UsePracticeScrapesReturn {
 
       return data || []
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch batch practice scrapes'
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user practice scrapes'
       setError(errorMessage)
       return []
     } finally {
@@ -124,7 +131,7 @@ export function usePracticeScrapes(): UsePracticeScrapesReturn {
   return {
     getPracticeScrape,
     upsertPracticeScrape,
-    getPracticeScrapesForBatch,
+    getPracticeScrapesForUser,
     loading,
     error
   }

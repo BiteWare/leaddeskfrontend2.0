@@ -36,102 +36,74 @@ export interface Database {
         }
         Relationships: []
       }
-      batch_runs: {
-        Row: {
-          id: string
-          user_id: string
-          filename: string
-          status: string
-          started_at: string | null
-          finished_at: string | null
-          result_url: string | null
-          error_message: string | null
-          meta: Json | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          filename: string
-          status?: string
-          started_at?: string | null
-          finished_at?: string | null
-          result_url?: string | null
-          error_message?: string | null
-          meta?: Json | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          filename?: string
-          status?: string
-          started_at?: string | null
-          finished_at?: string | null
-          result_url?: string | null
-          error_message?: string | null
-          meta?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "batch_runs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
+
       practice_scrapes: {
         Row: {
           id: string
-          batch_id: string
-          practice_name: string
-          full_address: string
-          street: string | null
-          city: string | null
-          state: string | null
-          zip: string | null
-          scraped_data: Json | null
-          scraped_at: string
-          status: string
+          user_id: string
+          input_name: string
+          input_street: string
+          input_city: string
+          input_state: string
+          scrape_datetime: string
+          scrape_data: Json | null
+          serp_url: string
+          gm_name: string
+          gm_street: string
+          gm_city: string
+          gm_state: string
+          gm_zip: string
+          gm_phone: string
+          gm_url: string
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          batch_id: string
-          practice_name: string
-          full_address: string
-          street?: string | null
-          city?: string | null
-          state?: string | null
-          zip?: string | null
-          scraped_data?: Json | null
-          scraped_at?: string
-          status?: string
+          user_id: string
+          input_name: string
+          input_street: string
+          input_city: string
+          input_state: string
+          scrape_datetime?: string
+          scrape_data?: Json | null
+          serp_url?: string
+          gm_name?: string
+          gm_street?: string
+          gm_city?: string
+          gm_state?: string
+          gm_zip?: string
+          gm_phone?: string
+          gm_url?: string
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          batch_id?: string
-          practice_name?: string
-          full_address?: string
-          street?: string | null
-          city?: string | null
-          state?: string | null
-          zip?: string | null
-          scraped_data?: Json | null
-          scraped_at?: string
-          status?: string
+          user_id?: string
+          input_name?: string
+          input_street?: string
+          input_city?: string
+          input_state?: string
+          scrape_datetime?: string
+          scrape_data?: Json | null
+          serp_url?: string
+          gm_name?: string
+          gm_street?: string
+          gm_city?: string
+          gm_state?: string
+          gm_zip?: string
+          gm_phone?: string
+          gm_url?: string
           created_at?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "practice_scrapes_batch_id_fkey"
-            columns: ["batch_id"]
+            foreignKeyName: "practice_scrapes_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "batch_runs"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           }
         ]
@@ -236,10 +208,6 @@ export type Enums<
 export type User = Tables<'users'>
 export type UserInsert = TablesInsert<'users'>
 export type UserUpdate = TablesUpdate<'users'>
-
-export type BatchRun = Tables<'batch_runs'>
-export type BatchRunInsert = TablesInsert<'batch_runs'>
-export type BatchRunUpdate = TablesUpdate<'batch_runs'>
 
 export type PracticeScrape = Tables<'practice_scrapes'>
 export type PracticeScrapeInsert = TablesInsert<'practice_scrapes'>

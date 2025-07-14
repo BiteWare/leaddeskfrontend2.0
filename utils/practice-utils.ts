@@ -55,9 +55,8 @@ export function isValidFreshScrape(
   maxAgeHours: number = 24
 ): boolean {
   if (!scrape) return false
-  if (scrape.status !== 'completed') return false
-  if (!scrape.scraped_data) return false
-  return isScrapeFresh(scrape.scraped_at, maxAgeHours)
+  if (!scrape.scrape_data) return false
+  return isScrapeFresh(scrape.scrape_datetime, maxAgeHours)
 }
 
 /**
@@ -106,4 +105,20 @@ export function parseAddress(fullAddress: string): {
   }
   
   return { street, city, state, zip }
+}
+
+/**
+ * Build input address from individual components for the new schema
+ * @param street - Street address
+ * @param city - City
+ * @param state - State
+ * @returns string - The complete input address string
+ */
+export function buildInputAddress(
+  street?: string,
+  city?: string,
+  state?: string
+): string {
+  const parts = [street, city, state].filter(Boolean)
+  return parts.join(', ')
 } 

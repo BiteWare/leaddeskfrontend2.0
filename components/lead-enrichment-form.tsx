@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Upload, FileText, Users, Building2, Mail, Phone, Globe, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import * as XLSX from "xlsx"
-import { useUsers, useCreateBatchRun, useUpdateBatchRun, usePracticeScrapes } from "@/hooks"
-import { buildFullAddress, isValidFreshScrape } from "@/utils/practice-utils"
+import { useUsers, usePracticeScrapes } from "@/hooks"
+import { buildFullAddress, buildInputAddress, isValidFreshScrape } from "@/utils/practice-utils"
 
 interface LeadEnrichmentFormProps {
   onEnrichLead?: (data: { practiceName?: string; street?: string; city?: string; state?: string }) => void
@@ -31,8 +31,6 @@ interface CachedDataState {
 
 export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadEnrichmentFormProps) {
   const { user } = useUsers()
-  const { createBatchRun } = useCreateBatchRun()
-  const { updateBatchRun } = useUpdateBatchRun()
   const { getPracticeScrape, upsertPracticeScrape } = usePracticeScrapes()
   
   const [practiceName, setPracticeName] = useState("")
@@ -47,7 +45,6 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
   })
   const [parsedFileRows, setParsedFileRows] = useState<any[] | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  const [currentBatchRunId, setCurrentBatchRunId] = useState<string | null>(null)
   const [cachedData, setCachedData] = useState<CachedDataState>({
     found: false,
     data: null,
@@ -83,13 +80,13 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
     setCachedData(prev => ({ ...prev, loading: true }))
     
     try {
-      const fullAddress = buildFullAddress(street, city, state)
-      const cachedScrape = await getPracticeScrape(practiceName, fullAddress)
+      const inputAddress = buildInputAddress(street, city, state)
+      const cachedScrape = await getPracticeScrape(practiceName, inputAddress)
       
       if (isValidFreshScrape(cachedScrape)) {
         setCachedData({
           found: true,
-          data: cachedScrape?.scraped_data,
+          data: cachedScrape?.scrape_data,
           loading: false
         })
         return cachedScrape
@@ -108,27 +105,32 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
    * Save enrichment results to cache
    */
   const saveToCache = useCallback(async (scrapedData: any) => {
-    if (!currentBatchRunId || !practiceName) return
+    if (!user?.id || !practiceName) return
 
     try {
-      const fullAddress = buildFullAddress(street, city, state)
+      const inputAddress = buildInputAddress(street, city, state)
       await upsertPracticeScrape({
-        batch_id: currentBatchRunId,
-        practice_name: practiceName,
-        full_address: fullAddress,
-        street: street || null,
-        city: city || null,
-        state: state || null,
-        zip: null, // Could be extracted from address if needed
-        scraped_data: scrapedData,
-        scraped_at: new Date().toISOString(),
-        status: 'completed'
+        user_id: user.id,
+        input_name: practiceName,
+        input_street: inputAddress,
+        input_city: city || '',
+        input_state: state || '',
+        scrape_datetime: new Date().toISOString(),
+        scrape_data: scrapedData,
+        serp_url: '',
+        gm_name: '',
+        gm_street: '',
+        gm_city: '',
+        gm_state: '',
+        gm_zip: '',
+        gm_phone: '',
+        gm_url: ''
       })
     } catch (error) {
       console.error('Error saving to cache:', error)
       // Don't throw - caching failure shouldn't break the main flow
     }
-  }, [currentBatchRunId, practiceName, street, city, state, upsertPracticeScrape])
+  }, [user?.id, practiceName, street, city, state, upsertPracticeScrape])
 
   const handleFileSelect = useCallback(async (file: File) => {
     const error = validateFile(file)
@@ -149,18 +151,6 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       success: false
     })
     try {
-      // Create batch run record if user is authenticated
-      let batchRunId: string | null = null
-      if (user?.id) {
-        const batchRun = await createBatchRun(user.id, file.name, {
-          fileSize: file.size,
-          fileType: file.type,
-          rowCount: null // Will be updated after parsing
-        })
-        batchRunId = batchRun?.id || null
-        setCurrentBatchRunId(batchRunId)
-      }
-
       let csvFile = file
       const fileName = file.name.toLowerCase()
       if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
@@ -179,18 +169,6 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       const parsedCSV = parseCSV(text)
       setParsedFileRows(parsedCSV.rows)
       
-      // Update batch run with row count if it exists
-      if (batchRunId) {
-        await updateBatchRun(batchRunId, {
-          meta: {
-            fileSize: file.size,
-            fileType: file.type,
-            rowCount: parsedCSV.rows.length,
-            parsedAt: new Date().toISOString()
-          }
-        })
-      }
-      
       if (onFileUpload) {
         await onFileUpload(csvFile)
       }
@@ -200,15 +178,6 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
         success: true
       }))
     } catch (error) {
-      // Update batch run with error if it exists
-      if (currentBatchRunId) {
-        await updateBatchRun(currentBatchRunId, {
-          status: 'failed',
-          error_message: error instanceof Error ? error.message : 'Failed to process file',
-          finished_at: new Date().toISOString()
-        })
-      }
-      
       setFileUpload(prev => ({
         ...prev,
         isUploading: false,
@@ -216,7 +185,7 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       }))
       setParsedFileRows(null)
     }
-  }, [onFileUpload, user?.id, createBatchRun, updateBatchRun, currentBatchRunId])
+  }, [onFileUpload, user?.id])
 
   const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -254,7 +223,6 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       success: false
     })
     setParsedFileRows(null)
-    setCurrentBatchRunId(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -280,17 +248,9 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
       
       if (cachedScrape) {
         // Use cached data
-        console.log('Using cached data:', cachedScrape.scraped_data)
+        console.log('Using cached data:', cachedScrape.scrape_data)
         // You could display the cached data here or pass it to a callback
         return
-      }
-
-      // Update batch run status to processing if it exists
-      if (currentBatchRunId) {
-        await updateBatchRun(currentBatchRunId, {
-          status: 'processing',
-          started_at: new Date().toISOString()
-        })
       }
 
       // If a file was uploaded and parsed, POST its rows to the API
@@ -321,25 +281,10 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
           // Save results to cache
           await saveToCache(result)
           
-          // Update batch run status to completed if successful
-          if (currentBatchRunId) {
-            await updateBatchRun(currentBatchRunId, {
-              status: 'completed',
-              finished_at: new Date().toISOString(),
-              result_url: null // Could be updated with actual result URL if available
-            })
-          }
           // Optionally, show a success message or handle response
         } catch (err) {
-          // Update batch run status to failed if there's an error
-          if (currentBatchRunId) {
-            await updateBatchRun(currentBatchRunId, {
-              status: 'failed',
-              error_message: err instanceof Error ? err.message : 'API request failed',
-              finished_at: new Date().toISOString()
-            })
-          }
           // Optionally, show an error message
+          console.error('Error processing file:', err)
         }
       }
       // Also call the manual enrich handler if present
