@@ -35,16 +35,10 @@ export async function POST(req: Request) {
       }), { status: 401 });
     }
 
-    // Include user_id in the payload
-    const payloadWithUserId = {
-      user_id: user.id,
-      ...body
-    };
-
     const res = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payloadWithUserId),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {

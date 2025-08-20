@@ -290,10 +290,12 @@ export default function LeadEnrichmentForm({ onEnrichLead, onFileUpload }: LeadE
               ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
             },
             credentials: "include", // Send cookies for auth
-            body: JSON.stringify({ 
-              filename: fileUpload.file?.name || 'uploaded_file.csv',
-              rows: parsedFileRows 
-            })
+            body: JSON.stringify(
+              parsedFileRows.map(row => ({
+                user_id: user.id,
+                ...row
+              }))
+            )
           })
           if (!response.ok) throw new Error("API request failed")
           
