@@ -110,24 +110,10 @@ export function AppHeader({ userName, userEmail, userImage }: AppHeaderProps) {
               <div className="flex items-center gap-1">
                 <Button 
                   size="sm"
-                  onClick={() => {}}
-                  className="px-3 py-1 text-sm font-bold rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-pink-200 focus:ring-offset-2 bg-transparent text-gray-400 cursor-not-allowed group hover:bg-red-500 hover:text-white"
+                  className="px-3 py-1 text-sm font-bold rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-pink-200 focus:ring-offset-2 bg-pink-500 text-white shadow-md"
                 >
-                  <span className="line-through group-hover:hidden">Search</span>
-                  <span className="hidden group-hover:inline font-normal">Coming Soon</span>
+                  Search
                 </Button>
-                <Link href="/enrich">
-                  <Button 
-                    size="sm"
-                    className={`px-3 py-1 text-sm font-bold rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-pink-200 focus:ring-offset-2 ${
-                      pathname === "/enrich" 
-                        ? "bg-pink-500 text-white shadow-md" 
-                        : "bg-transparent text-gray-600 hover:text-pink-500 hover:bg-pink-50"
-                    }`}
-                  >
-                    Enrich
-                  </Button>
-                </Link>
               </div>
             </div>
           </nav>
