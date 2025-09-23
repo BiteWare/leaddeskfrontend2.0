@@ -1,6 +1,8 @@
 "use client"
 
 import { AuthGuard } from "@/components/auth-guard"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebarCustom } from "@/components/app-sidebar-custom"
 import { useUsers } from "@/hooks/useUsers"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,18 +12,27 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <Button 
-              onClick={signOut}
-              variant="outline"
-              className="text-red-600 border-red-600 hover:bg-red-50"
-            >
-              Sign Out
-            </Button>
-          </div>
+      <SidebarProvider>
+        <AppSidebarCustom />
+        <SidebarInset>
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+            {/* Header Bar */}
+            <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b">
+              <SidebarTrigger className="-ml-1" />
+            </header>
+            
+            <div className="flex-1 p-8">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-8">
+                  <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                <Button 
+                  onClick={signOut}
+                  variant="outline"
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  Sign Out
+                </Button>
+              </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
@@ -83,9 +94,12 @@ export default function DashboardPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
-        </div>
-      </div>
+            </Card>
+              </div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     </AuthGuard>
   )
 } 
