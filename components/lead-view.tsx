@@ -1,15 +1,89 @@
 "use client"
 
-import React from "react"
+import React, { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MapPin, Globe, Phone, Mail, Users, Stethoscope } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  MapPin, 
+  Globe, 
+  Phone, 
+  Mail, 
+  Users, 
+  Stethoscope, 
+  Building, 
+  BarChart3, 
+  BookOpenCheck,
+  Search,
+  X,
+  Check,
+  Lightbulb
+} from "lucide-react"
+// Mock reasoning steps data
+const mockReasoningSteps = [
+  {
+    title: "Executing web requests",
+    body: `Describing using \`web.run\` for browsing to access up-to-date content.
+Plans to start by calling \`web.run\` with \`search_query\` or directly opening a URL.
+Mentions setting \`"response_length":"short"\` initially, then checking "about pages" and other content.
+Emphasizes being methodical for effective information retrieval.`,
+    icon: "globe"
+  },
+  {
+    title: "Analyzing homepage content",
+    body: `Indicates that homepage content has been obtained.
+Plans to dive into subpages like "About," "Our Team," and "location pages."
+Notes a link for "About" on the homepage, specifically "link 7," which will be clicked using the \`web.run\` function.
+States this step is straightforward and aims for a thorough analysis.`,
+    icon: "info"
+  },
+  {
+    title: "Finding contact information",
+    body: `Details checking the contact page for phone, address, and hours of operation.
+Mentions an "email us" link tied to the contact link.
+Plans to view the \`href\` for "email us" and search the website for "mailto" or "email us" patterns using a find function to gather specific contact details.`,
+    icon: "globe"
+  },
+  {
+    title: "Clarifying JSON requirements",
+    body: `Discusses working on the "Decision Boundary" and handling citations for the \`web.run\` tool.
+Mentions incorporating references in the \`urls_analyzed\` field, implying pure URLs are expected.
+Highlights a tension between these requirements and instructions to respond with valid JSON matching the schema.
+Stresses the importance of both the Decision Boundary and developer instructions to ensure precise and schema-conforming JSON output.`,
+    icon: "info"
+  },
+  {
+    title: "Deciding on practice details",
+    body: `Considers including specialties like "Emergency Dental Care," "Cosmetic Dentistry," and others listed on the homepage.
+Notes that the site shows these plus "Comprehensive Dentistry," and all will be included.
+The text is cut off at the bottom, but it mentions a discussion about using "Dr. Colin Golian."`,
+    icon: "check"
+  }
+]
 
 export interface StaffMember {
   name: string
   role: string
+  location?: string
+  phone?: string
+  email?: string
+}
+
+export interface Location {
+  id: string
+  name: string
+  address: string
+  phone: string
+  email: string
+  manager: string
+  staffCount: number
+  state: string
 }
 
 export interface LeadData {
@@ -22,6 +96,8 @@ export interface LeadData {
   numberOfDentists: number
   numberOfHygienists: number
   staff: StaffMember[]
+  locations?: Location[]
+  specialties?: string[]
 }
 
 interface LeadViewProps {
@@ -30,24 +106,57 @@ interface LeadViewProps {
 
 // Mock data for demonstration
 export const mockLeadData: LeadData = {
-  practiceName: "Bright Smiles Dental Clinic",
-  practiceAddress: "123 Main Street, Suite 200, San Francisco, CA 94105",
-  practiceWebsite: "https://brightsmilesdental.com",
-  practicePhone: "(555) 123-4567",
-  practiceEmail: "info@brightsmilesdental.com",
+  practiceName: "Alpha Dental Center",
+  practiceAddress: "123 Main Street, Suite 200, Boston, MA 02101",
+  practiceWebsite: "https://alphadentalcenter.com",
+  practicePhone: "(617) 555-0123",
+  practiceEmail: "info@alphadentalcenter.com",
   practiceSpecialty: "General Dentistry & Orthodontics",
-  numberOfDentists: 3,
-  numberOfHygienists: 4,
+  numberOfDentists: 34,
+  numberOfHygienists: 34,
+  specialties: ["General Dentistry", "Orthodontics", "Periodontics", "Endodontics", "Oral Surgery"],
+  locations: [
+    {
+      id: "1",
+      name: "Boston Office",
+      address: "123 Main Street, Suite 200, Boston, MA 02101",
+      phone: "(617) 555-0123",
+      email: "boston@alphadentalcenter.com",
+      manager: "Dr. Sarah Johnson",
+      staffCount: 25,
+      state: "MA"
+    },
+    {
+      id: "2", 
+      name: "Cambridge Office",
+      address: "456 Harvard Square, Cambridge, MA 02138",
+      phone: "(617) 555-0456",
+      email: "cambridge@alphadentalcenter.com",
+      manager: "Dr. Michael Chen",
+      staffCount: 20,
+      state: "MA"
+    },
+    {
+      id: "3",
+      name: "Providence Office", 
+      address: "789 College Hill, Providence, RI 02912",
+      phone: "(401) 555-0789",
+      email: "providence@alphadentalcenter.com",
+      manager: "Dr. Emily Rodriguez",
+      staffCount: 15,
+      state: "RI"
+    }
+  ],
   staff: [
-    { name: "Dr. Sarah Johnson", role: "Lead Dentist" },
-    { name: "Dr. Michael Chen", role: "Orthodontist" },
-    { name: "Dr. Emily Rodriguez", role: "General Dentist" },
-    { name: "Lisa Thompson", role: "Hygienist" },
-    { name: "Maria Garcia", role: "Hygienist" },
-    { name: "Jennifer Lee", role: "Hygienist" },
-    { name: "Robert Davis", role: "Hygienist" },
-    { name: "Amanda Wilson", role: "Office Manager" },
-    { name: "David Brown", role: "Dental Assistant" }
+    { name: "Dr. Sarah Johnson", role: "Lead Dentist", location: "Boston Office", phone: "(617) 555-0124", email: "sarah.johnson@alphadentalcenter.com" },
+    { name: "Dr. Michael Chen", role: "Orthodontist", location: "Cambridge Office", phone: "(617) 555-0457", email: "michael.chen@alphadentalcenter.com" },
+    { name: "Dr. Emily Rodriguez", role: "General Dentist", location: "Providence Office", phone: "(401) 555-0790", email: "emily.rodriguez@alphadentalcenter.com" },
+    { name: "Lisa Thompson", role: "Hygienist", location: "Boston Office", phone: "(617) 555-0125", email: "lisa.thompson@alphadentalcenter.com" },
+    { name: "Maria Garcia", role: "Hygienist", location: "Cambridge Office", phone: "(617) 555-0458", email: "maria.garcia@alphadentalcenter.com" },
+    { name: "Jennifer Lee", role: "Hygienist", location: "Providence Office", phone: "(401) 555-0791", email: "jennifer.lee@alphadentalcenter.com" },
+    { name: "Robert Davis", role: "Hygienist", location: "Boston Office", phone: "(617) 555-0126", email: "robert.davis@alphadentalcenter.com" },
+    { name: "Amanda Wilson", role: "Office Manager", location: "Boston Office", phone: "(617) 555-0127", email: "amanda.wilson@alphadentalcenter.com" },
+    { name: "David Brown", role: "Dental Assistant", location: "Cambridge Office", phone: "(617) 555-0459", email: "david.brown@alphadentalcenter.com" }
   ]
 }
 
@@ -55,9 +164,9 @@ export const mockLeadData: LeadData = {
 export const mockLeadDataMinimal: LeadData = {
   practiceName: "Family Dental Care",
   practiceAddress: "456 Oak Avenue, Portland, OR 97201",
-  practiceWebsite: undefined, // Testing missing website
+  practiceWebsite: undefined,
   practicePhone: "(503) 555-0123",
-  practiceEmail: undefined, // Testing missing email
+  practiceEmail: undefined,
   practiceSpecialty: "Family Dentistry",
   numberOfDentists: 1,
   numberOfHygienists: 2,
@@ -110,7 +219,12 @@ export const mockLeadDataLarge: LeadData = {
   ]
 }
 
+
 export default function LeadView({ leadData }: LeadViewProps) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [stateFilter, setStateFilter] = useState('all')
+  const [roleFilter, setRoleFilter] = useState('all')
+
   const {
     practiceName,
     practiceAddress,
@@ -120,142 +234,533 @@ export default function LeadView({ leadData }: LeadViewProps) {
     practiceSpecialty,
     numberOfDentists,
     numberOfHygienists,
-    staff
+    staff,
+    locations = [],
+    specialties = []
   } = leadData
 
-  const formatValue = (value: string | number | undefined, fallback: string = "Not available") => {
-    return value ?? fallback
+  // Filter data based on search and filters
+  const filteredStaff = useMemo(() => {
+    return staff.filter(member => {
+      const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (member.location && member.location.toLowerCase().includes(searchTerm.toLowerCase()))
+      const matchesState = stateFilter === 'all' || 
+                          (member.location && locations.find(loc => loc.name === member.location)?.state === stateFilter)
+      const matchesRole = roleFilter === 'all' || member.role.toLowerCase().includes(roleFilter.toLowerCase())
+      return matchesSearch && matchesState && matchesRole
+    })
+  }, [staff, searchTerm, stateFilter, roleFilter, locations])
+
+  const filteredLocations = useMemo(() => {
+    return locations.filter(location => {
+      const matchesSearch = location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           location.address.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesState = stateFilter === 'all' || location.state === stateFilter
+      return matchesSearch && matchesState
+    })
+  }, [locations, searchTerm, stateFilter])
+
+  const hasActiveFilters = searchTerm || stateFilter !== 'all' || roleFilter !== 'all'
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setStateFilter('all')
+    setRoleFilter('all')
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
+    <div className="w-full max-w-6xl mx-auto">
       <Card className="shadow-lg">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-3xl font-bold text-primary flex items-center gap-2">
-            <Stethoscope className="h-8 w-8" />
-            {practiceName}
-          </CardTitle>
-          <Badge variant="secondary" className="w-fit">
-            {practiceSpecialty}
-          </Badge>
+        {/* Fixed Header */}
+        <CardHeader className="pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Stethoscope className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold text-primary">
+                  {practiceName}
+                </CardTitle>
+                <Badge variant="secondary" className="mt-1">
+                  {practiceSpecialty}
+                </Badge>
+              </div>
+            </div>
+            <div className="text-right text-sm text-muted-foreground">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <Building className="h-4 w-4" />
+                  <span>{locations.length} locations</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  <span>{staff.length} staff</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Practice Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Practice Information
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="font-medium text-muted-foreground">Address:</span>
-                  <p className="text-foreground mt-1">{practiceAddress}</p>
+         {/* Fixed Height Container with Tabs */}
+         <div className="h-[795px] flex flex-col">
+          <Tabs defaultValue="overview" className="flex-1 flex flex-col">
+            {/* Tab Navigation - Fixed */}
+            <div className="px-6 pt-4">
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="locations" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Locations
+                </TabsTrigger>
+                <TabsTrigger value="staff" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Staff
+                </TabsTrigger>
+                <TabsTrigger value="contact" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Contact
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="research" className="flex items-center gap-2">
+                  <BookOpenCheck className="h-4 w-4" />
+                  Research
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Filter Bar - Fixed Height */}
+            <div className="px-6 py-4 border-b">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-64">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name, role, or location..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">Website:</span>
-                  <p className="mt-1">
-                    {practiceWebsite ? (
-                      <a 
-                        href={practiceWebsite} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 underline"
-                      >
-                        <Globe className="h-4 w-4 inline mr-1" />
-                        {practiceWebsite}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">Not available</span>
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">Phone:</span>
-                  <p className="mt-1">
-                    {practicePhone ? (
-                      <a 
-                        href={`tel:${practicePhone}`}
-                        className="text-primary hover:text-primary/80 flex items-center gap-1"
-                      >
-                        <Phone className="h-4 w-4" />
-                        {practicePhone}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">Not available</span>
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">Email:</span>
-                  <p className="mt-1">
-                    {practiceEmail ? (
-                      <a 
-                        href={`mailto:${practiceEmail}`}
-                        className="text-primary hover:text-primary/80 flex items-center gap-1"
-                      >
-                        <Mail className="h-4 w-4" />
-                        {practiceEmail}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">Not available</span>
-                    )}
-                  </p>
-                </div>
+                <Select value={stateFilter} onValueChange={setStateFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="State" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All States</SelectItem>
+                    <SelectItem value="MA">Massachusetts</SelectItem>
+                    <SelectItem value="RI">Rhode Island</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="dentist">Dentist</SelectItem>
+                    <SelectItem value="hygienist">Hygienist</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="assistant">Assistant</SelectItem>
+                  </SelectContent>
+                </Select>
+                {hasActiveFilters && (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    <X className="h-4 w-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Practice Statistics
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{numberOfDentists}</div>
-                  <div className="text-sm text-muted-foreground">Dentists</div>
-                </div>
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{numberOfHygienists}</div>
-                  <div className="text-sm text-muted-foreground">Hygienists</div>
-                </div>
+            {/* Content Area - Fixed Height with proper flex */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="p-6">
+                  {/* Overview Tab */}
+                  <TabsContent value="overview" className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-blue-100 text-sm">Locations</p>
+                              <p className="text-2xl font-bold">{locations.length}</p>
+                            </div>
+                            <Building className="h-8 w-8 text-blue-200" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-green-100 text-sm">Dentists</p>
+                              <p className="text-2xl font-bold">{numberOfDentists}</p>
+                            </div>
+                            <Stethoscope className="h-8 w-8 text-green-200" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-purple-100 text-sm">Hygienists</p>
+                              <p className="text-2xl font-bold">{numberOfHygienists}</p>
+                            </div>
+                            <Users className="h-8 w-8 text-purple-200" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-orange-100 text-sm">Specialties</p>
+                              <p className="text-2xl font-bold">{specialties.length}</p>
+                            </div>
+                            <BookOpenCheck className="h-8 w-8 text-orange-200" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Practice Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <MapPin className="h-5 w-5" />
+                            Practice Information
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div>
+                            <span className="font-medium text-muted-foreground">Address:</span>
+                            <p className="text-foreground mt-1">{practiceAddress}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">Website:</span>
+                            <p className="mt-1">
+                              {practiceWebsite ? (
+                                <a 
+                                  href={practiceWebsite} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:text-primary/80 underline"
+                                >
+                                  <Globe className="h-4 w-4 inline mr-1" />
+                                  {practiceWebsite}
+                                </a>
+                              ) : (
+                                <span className="text-muted-foreground">Not available</span>
+                              )}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BookOpenCheck className="h-5 w-5" />
+                            Specialties
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {specialties.map((specialty, index) => (
+                              <Badge key={index} variant="secondary">
+                                {specialty}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  {/* Locations Tab */}
+                  <TabsContent value="locations" className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Office Locations ({filteredLocations.length})</h3>
+                    </div>
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Office Name</TableHead>
+                            <TableHead>Address</TableHead>
+                            <TableHead>Phone</TableHead>
+                            <TableHead>Manager</TableHead>
+                            <TableHead>Staff Count</TableHead>
+                            <TableHead>State</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredLocations.map((location) => (
+                            <TableRow key={location.id} className="hover:bg-muted/50">
+                              <TableCell className="font-medium">{location.name}</TableCell>
+                              <TableCell>{location.address}</TableCell>
+                              <TableCell>
+                                <a href={`tel:${location.phone}`} className="text-primary hover:text-primary/80">
+                                  {location.phone}
+                                </a>
+                              </TableCell>
+                              <TableCell>{location.manager}</TableCell>
+                              <TableCell>{location.staffCount}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{location.state}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                   {/* Staff Tab */}
+                   <TabsContent value="staff" className="space-y-4">
+                     <div className="flex items-center justify-between">
+                       <h3 className="text-lg font-semibold">Staff Directory ({filteredStaff.length})</h3>
+                     </div>
+                     <div className="border rounded-lg overflow-hidden">
+                       <div className="overflow-x-auto">
+                         <Table>
+                           <TableHeader>
+                             <TableRow>
+                               <TableHead className="min-w-[200px]">Name</TableHead>
+                               <TableHead className="min-w-[150px]">Role</TableHead>
+                               <TableHead className="min-w-[150px]">Location</TableHead>
+                               <TableHead className="min-w-[140px]">Phone</TableHead>
+                               <TableHead className="min-w-[250px]">Email</TableHead>
+                             </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                             {filteredStaff.map((member, index) => (
+                               <TableRow key={index} className="hover:bg-muted/50">
+                                 <TableCell className="font-medium">{member.name}</TableCell>
+                                 <TableCell>
+                                   <Badge variant="outline" className="text-xs">
+                                     {member.role}
+                                   </Badge>
+                                 </TableCell>
+                                 <TableCell className="text-sm">{member.location || 'N/A'}</TableCell>
+                                 <TableCell className="text-sm">
+                                   {member.phone ? (
+                                     <a href={`tel:${member.phone}`} className="text-primary hover:text-primary/80">
+                                       {member.phone}
+                                     </a>
+                                   ) : 'N/A'}
+                                 </TableCell>
+                                 <TableCell className="text-sm">
+                                   {member.email ? (
+                                     <a href={`mailto:${member.email}`} className="text-primary hover:text-primary/80 break-all">
+                                       {member.email}
+                                     </a>
+                                   ) : 'N/A'}
+                                 </TableCell>
+                               </TableRow>
+                             ))}
+                           </TableBody>
+                         </Table>
+                       </div>
+                     </div>
+                   </TabsContent>
+
+                  {/* Contact Tab */}
+                  <TabsContent value="contact" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Phone className="h-5 w-5" />
+                            Main Contact
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div>
+                            <span className="font-medium text-muted-foreground">Phone:</span>
+                            <p className="mt-1">
+                              {practicePhone ? (
+                                <a 
+                                  href={`tel:${practicePhone}`}
+                                  className="text-primary hover:text-primary/80 flex items-center gap-1"
+                                >
+                                  <Phone className="h-4 w-4" />
+                                  {practicePhone}
+                                </a>
+                              ) : (
+                                <span className="text-muted-foreground">Not available</span>
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">Email:</span>
+                            <p className="mt-1">
+                              {practiceEmail ? (
+                                <a 
+                                  href={`mailto:${practiceEmail}`}
+                                  className="text-primary hover:text-primary/80 flex items-center gap-1"
+                                >
+                                  <Mail className="h-4 w-4" />
+                                  {practiceEmail}
+                                </a>
+                              ) : (
+                                <span className="text-muted-foreground">Not available</span>
+                              )}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <MapPin className="h-5 w-5" />
+                            Office Locations
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {locations.map((location) => (
+                            <div key={location.id} className="border-l-2 border-primary pl-3">
+                              <p className="font-medium">{location.name}</p>
+                              <p className="text-sm text-muted-foreground">{location.address}</p>
+                              <p className="text-sm">
+                                <a href={`tel:${location.phone}`} className="text-primary hover:text-primary/80">
+                                  {location.phone}
+                                </a>
+                              </p>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  {/* Analytics Tab */}
+                  <TabsContent value="analytics" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5" />
+                            Role Distribution
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {Object.entries(
+                              staff.reduce((acc, member) => {
+                                acc[member.role] = (acc[member.role] || 0) + 1
+                                return acc
+                              }, {} as Record<string, number>)
+                            ).map(([role, count]) => {
+                              const percentage = ((count / staff.length) * 100).toFixed(1)
+                              return (
+                                <div key={role} className="space-y-1">
+                                  <div className="flex justify-between text-sm">
+                                    <span>{role}</span>
+                                    <span>{count} ({percentage}%)</span>
+                                  </div>
+                                  <div className="w-full bg-muted rounded-full h-2">
+                                    <div 
+                                      className="bg-primary h-2 rounded-full" 
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5" />
+                            Multi-Location Staff
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center space-y-2">
+                            <div className="text-3xl font-bold text-primary">
+                              {staff.filter(member => member.location).length}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Staff with assigned locations</div>
+                            <div className="text-xs text-muted-foreground">
+                              {((staff.filter(member => member.location).length / staff.length) * 100).toFixed(1)}% of total staff
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                   {/* Research Tab */}
+                   <TabsContent value="research" className="space-y-4">
+                     <div className="flex items-center justify-between">
+                       <h3 className="text-lg font-semibold flex items-center gap-2">
+                         <BookOpenCheck className="h-5 w-5" />
+                         AI Research Analysis
+                       </h3>
+                       <Badge variant="outline" className="text-xs">
+                         Reasoning
+                       </Badge>
+                     </div>
+                     
+                     {/* Reasoning Content - Direct Implementation */}
+                     <div className="rounded-lg border bg-card shadow-sm">
+                       {/* Header */}
+                       <div className="flex items-center gap-2 p-4 border-b">
+                         <Lightbulb className="h-4 w-4 text-yellow-500" />
+                         <h3 className="font-medium text-sm">Reasoning</h3>
+                       </div>
+
+                       {/* Steps - Scrollable */}
+                       <div className="max-h-[500px] overflow-y-auto p-4">
+                         <div className="space-y-4">
+                           {mockReasoningSteps.map((step, index) => (
+                             <div key={index} className="space-y-2">
+                               <div className="flex items-start gap-3">
+                                 {step.icon && (
+                                   <div className="flex-shrink-0 mt-0.5">
+                                     {step.icon === "globe" && <Globe className="h-4 w-4 text-slate-500" />}
+                                     {step.icon === "check" && <Check className="h-4 w-4 text-green-500" />}
+                                     {step.icon === "info" && <BookOpenCheck className="h-4 w-4 text-blue-500" />}
+                                   </div>
+                                 )}
+                                 <div className="flex-1 min-w-0">
+                                   <h4 className="font-medium text-xs mb-1">{step.title}</h4>
+                                   <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
+                                     {step.body}
+                                   </p>
+                                 </div>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     </div>
+                   </TabsContent>
+                  </div>
+                </ScrollArea>
               </div>
             </div>
-          </div>
-
-          <Separator />
-
-          {/* Staff List */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Staff Directory ({staff.length} total)
-            </h3>
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Role</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {staff.map((member, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {member.role}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </CardContent>
+          </Tabs>
+        </div>
       </Card>
     </div>
   )

@@ -43,7 +43,7 @@ export default function LeadDeskForm() {
             
             {/* Main Content */}
             <div className="flex-1 flex flex-col items-center justify-center px-8 py-8">
-              <div className="w-full flex flex-col items-center justify-center -mt-16">
+              <div className="w-full flex flex-col items-center justify-center -mt-46">
                 <Searchbar 
                   onSearch={handleSearch} 
                   hasResults={!!searchResults} 
