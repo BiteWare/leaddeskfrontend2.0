@@ -37,76 +37,53 @@ export interface Database {
         Relationships: []
       }
 
-      practice_scrapes: {
+      enrichment_jobs: {
         Row: {
-          id: string
-          user_id: string
-          input_name: string
-          input_street: string
-          input_city: string
-          input_state: string
-          scrape_datetime: string
-          scrape_data: Json | null
-          serp_url: string
-          gm_name: string
-          gm_street: string
-          gm_city: string
-          gm_state: string
-          gm_zip: string
-          gm_phone: string
-          gm_url: string
-          created_at: string
-          updated_at: string
+          correlation_id: string
+          run_user_id: string | null
+          created_at: string | null
+          overall_job_status: string | null
+          input_customer_name: string | null
+          input_street_address: string | null
+          input_city: string | null
+          input_state: string | null
+          url_worker_job_id: string | null
+          url_worker_results_json: Json | null
+          scraper_worker_job_id: string | null
+          scraper_worker_results_json: Json | null
+          url_worker_resulting_url: string | null
         }
         Insert: {
-          id?: string
-          user_id: string
-          input_name: string
-          input_street: string
-          input_city: string
-          input_state: string
-          scrape_datetime?: string
-          scrape_data?: Json | null
-          serp_url?: string
-          gm_name?: string
-          gm_street?: string
-          gm_city?: string
-          gm_state?: string
-          gm_zip?: string
-          gm_phone?: string
-          gm_url?: string
-          created_at?: string
-          updated_at?: string
+          correlation_id: string
+          run_user_id?: string | null
+          created_at?: string | null
+          overall_job_status?: string | null
+          input_customer_name?: string | null
+          input_street_address?: string | null
+          input_city?: string | null
+          input_state?: string | null
+          url_worker_job_id?: string | null
+          url_worker_results_json?: Json | null
+          scraper_worker_job_id?: string | null
+          scraper_worker_results_json?: Json | null
+          url_worker_resulting_url?: string | null
         }
         Update: {
-          id?: string
-          user_id?: string
-          input_name?: string
-          input_street?: string
-          input_city?: string
-          input_state?: string
-          scrape_datetime?: string
-          scrape_data?: Json | null
-          serp_url?: string
-          gm_name?: string
-          gm_street?: string
-          gm_city?: string
-          gm_state?: string
-          gm_zip?: string
-          gm_phone?: string
-          gm_url?: string
-          created_at?: string
-          updated_at?: string
+          correlation_id?: string
+          run_user_id?: string | null
+          created_at?: string | null
+          overall_job_status?: string | null
+          input_customer_name?: string | null
+          input_street_address?: string | null
+          input_city?: string | null
+          input_state?: string | null
+          url_worker_job_id?: string | null
+          url_worker_results_json?: Json | null
+          scraper_worker_job_id?: string | null
+          scraper_worker_results_json?: Json | null
+          url_worker_resulting_url?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "practice_scrapes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -118,7 +95,7 @@ export interface Database {
     Enums: {
       [_ in never]: never
     }
-    CompositeTypes: {
+    CompositeTypes: { 
       [_ in never]: never
     }
   }
@@ -209,6 +186,6 @@ export type User = Tables<'users'>
 export type UserInsert = TablesInsert<'users'>
 export type UserUpdate = TablesUpdate<'users'>
 
-export type PracticeScrape = Tables<'practice_scrapes'>
-export type PracticeScrapeInsert = TablesInsert<'practice_scrapes'>
-export type PracticeScrapeUpdate = TablesUpdate<'practice_scrapes'> 
+export type EnrichmentJob = Tables<'enrichment_jobs'>
+export type EnrichmentJobInsert = TablesInsert<'enrichment_jobs'>
+export type EnrichmentJobUpdate = TablesUpdate<'enrichment_jobs'> 

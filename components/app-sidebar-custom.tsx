@@ -19,6 +19,7 @@ import {
   PanelLeftOpen,
   Eye,
   Stethoscope,
+  NotebookTabs,
 } from "lucide-react"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -139,9 +140,10 @@ interface AppSidebarCustomProps {
   userName?: string
   userEmail?: string
   userImage?: string
+  currentJobUrl?: string
 }
 
-const navigationData = [
+const getNavigationData = (currentJobUrl?: string) => [
   {
     title: "Search",
     url: "/",
@@ -149,41 +151,30 @@ const navigationData = [
     isActive: true,
   },
   {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
+    title: "All Jobs",
+    url: "/results",
+    icon: NotebookTabs,
   },
+  ...(currentJobUrl ? [{
+    title: "Current Job",
+    url: currentJobUrl,
+    icon: FileText,
+  }] : []),
   {
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
   },
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: FileText,
-  },
-  {
-    title: "Teams",
-    url: "/teams",
-    icon: Users,
-  },
 ]
 
-const quickActions = [
-  {
-    title: "Enrich Data",
-    url: "/enrich",
-    icon: Zap,
-  },
-]
-
-export function AppSidebarCustom({ userName, userEmail, userImage }: AppSidebarCustomProps) {
+export function AppSidebarCustom({ userName, userEmail, userImage, currentJobUrl }: AppSidebarCustomProps) {
   const { user } = useUsers()
   const pathname = usePathname()
 
   const displayName = userName || user?.user_metadata?.name || user?.email?.split('@')[0] || "User"
   const displayEmail = userEmail || user?.email || ""
+  
+  const navigationData = getNavigationData(currentJobUrl)
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -204,27 +195,6 @@ export function AppSidebarCustom({ userName, userEmail, userImage }: AppSidebarC
           <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Navigation</SidebarGroupLabel>
           <SidebarMenu>
             {navigationData.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton 
-                  asChild 
-                  tooltip={item.title}
-                  isActive={pathname === item.url}
-                >
-                  <a href={item.url}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        {/* Quick Actions */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Quick Actions</SidebarGroupLabel>
-          <SidebarMenu>
-            {quickActions.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton 
                   asChild 

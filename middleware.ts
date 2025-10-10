@@ -30,8 +30,8 @@ export async function middleware(request: NextRequest) {
   // Refresh session if expired - required for Server Components
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protected routes
-  const protectedPaths = ['/dashboard', '/profile', '/admin']
+  // Protected routes - only protect admin routes
+  const protectedPaths = ['/admin']
   const authPaths = ['/auth', '/login', '/signup']
   
   const isProtectedPath = protectedPaths.some(path => 
@@ -48,10 +48,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect to enrich if accessing auth routes while logged in
+  // Redirect to home if accessing auth routes while logged in
   if (isAuthPath && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/enrich'
+    url.pathname = '/'
     return NextResponse.redirect(url)
   }
 

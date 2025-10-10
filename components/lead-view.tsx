@@ -25,47 +25,6 @@ import {
   Check,
   Lightbulb
 } from "lucide-react"
-// Mock reasoning steps data
-const mockReasoningSteps = [
-  {
-    title: "Executing web requests",
-    body: `Describing using \`web.run\` for browsing to access up-to-date content.
-Plans to start by calling \`web.run\` with \`search_query\` or directly opening a URL.
-Mentions setting \`"response_length":"short"\` initially, then checking "about pages" and other content.
-Emphasizes being methodical for effective information retrieval.`,
-    icon: "globe"
-  },
-  {
-    title: "Analyzing homepage content",
-    body: `Indicates that homepage content has been obtained.
-Plans to dive into subpages like "About," "Our Team," and "location pages."
-Notes a link for "About" on the homepage, specifically "link 7," which will be clicked using the \`web.run\` function.
-States this step is straightforward and aims for a thorough analysis.`,
-    icon: "info"
-  },
-  {
-    title: "Finding contact information",
-    body: `Details checking the contact page for phone, address, and hours of operation.
-Mentions an "email us" link tied to the contact link.
-Plans to view the \`href\` for "email us" and search the website for "mailto" or "email us" patterns using a find function to gather specific contact details.`,
-    icon: "globe"
-  },
-  {
-    title: "Clarifying JSON requirements",
-    body: `Discusses working on the "Decision Boundary" and handling citations for the \`web.run\` tool.
-Mentions incorporating references in the \`urls_analyzed\` field, implying pure URLs are expected.
-Highlights a tension between these requirements and instructions to respond with valid JSON matching the schema.
-Stresses the importance of both the Decision Boundary and developer instructions to ensure precise and schema-conforming JSON output.`,
-    icon: "info"
-  },
-  {
-    title: "Deciding on practice details",
-    body: `Considers including specialties like "Emergency Dental Care," "Cosmetic Dentistry," and others listed on the homepage.
-Notes that the site shows these plus "Comprehensive Dentistry," and all will be included.
-The text is cut off at the bottom, but it mentions a discussion about using "Dr. Colin Golian."`,
-    icon: "check"
-  }
-]
 
 export interface StaffMember {
   name: string
@@ -73,6 +32,7 @@ export interface StaffMember {
   location?: string
   phone?: string
   email?: string
+  credentials?: string
 }
 
 export interface Location {
@@ -98,127 +58,20 @@ export interface LeadData {
   staff: StaffMember[]
   locations?: Location[]
   specialties?: string[]
+  // New fields from scraper_worker_results_json
+  resultingUrl?: string
+  personInCharge?: {
+    name: string
+    role: string
+    credentials?: string
+  }
+  worksMultipleLocations?: boolean
+  scrapeNotes?: string
 }
 
 interface LeadViewProps {
   leadData: LeadData
 }
-
-// Mock data for demonstration
-export const mockLeadData: LeadData = {
-  practiceName: "Alpha Dental Center",
-  practiceAddress: "123 Main Street, Suite 200, Boston, MA 02101",
-  practiceWebsite: "https://alphadentalcenter.com",
-  practicePhone: "(617) 555-0123",
-  practiceEmail: "info@alphadentalcenter.com",
-  practiceSpecialty: "General Dentistry & Orthodontics",
-  numberOfDentists: 34,
-  numberOfHygienists: 34,
-  specialties: ["General Dentistry", "Orthodontics", "Periodontics", "Endodontics", "Oral Surgery"],
-  locations: [
-    {
-      id: "1",
-      name: "Boston Office",
-      address: "123 Main Street, Suite 200, Boston, MA 02101",
-      phone: "(617) 555-0123",
-      email: "boston@alphadentalcenter.com",
-      manager: "Dr. Sarah Johnson",
-      staffCount: 25,
-      state: "MA"
-    },
-    {
-      id: "2", 
-      name: "Cambridge Office",
-      address: "456 Harvard Square, Cambridge, MA 02138",
-      phone: "(617) 555-0456",
-      email: "cambridge@alphadentalcenter.com",
-      manager: "Dr. Michael Chen",
-      staffCount: 20,
-      state: "MA"
-    },
-    {
-      id: "3",
-      name: "Providence Office", 
-      address: "789 College Hill, Providence, RI 02912",
-      phone: "(401) 555-0789",
-      email: "providence@alphadentalcenter.com",
-      manager: "Dr. Emily Rodriguez",
-      staffCount: 15,
-      state: "RI"
-    }
-  ],
-  staff: [
-    { name: "Dr. Sarah Johnson", role: "Lead Dentist", location: "Boston Office", phone: "(617) 555-0124", email: "sarah.johnson@alphadentalcenter.com" },
-    { name: "Dr. Michael Chen", role: "Orthodontist", location: "Cambridge Office", phone: "(617) 555-0457", email: "michael.chen@alphadentalcenter.com" },
-    { name: "Dr. Emily Rodriguez", role: "General Dentist", location: "Providence Office", phone: "(401) 555-0790", email: "emily.rodriguez@alphadentalcenter.com" },
-    { name: "Lisa Thompson", role: "Hygienist", location: "Boston Office", phone: "(617) 555-0125", email: "lisa.thompson@alphadentalcenter.com" },
-    { name: "Maria Garcia", role: "Hygienist", location: "Cambridge Office", phone: "(617) 555-0458", email: "maria.garcia@alphadentalcenter.com" },
-    { name: "Jennifer Lee", role: "Hygienist", location: "Providence Office", phone: "(401) 555-0791", email: "jennifer.lee@alphadentalcenter.com" },
-    { name: "Robert Davis", role: "Hygienist", location: "Boston Office", phone: "(617) 555-0126", email: "robert.davis@alphadentalcenter.com" },
-    { name: "Amanda Wilson", role: "Office Manager", location: "Boston Office", phone: "(617) 555-0127", email: "amanda.wilson@alphadentalcenter.com" },
-    { name: "David Brown", role: "Dental Assistant", location: "Cambridge Office", phone: "(617) 555-0459", email: "david.brown@alphadentalcenter.com" }
-  ]
-}
-
-// Additional mock data examples for testing different scenarios
-export const mockLeadDataMinimal: LeadData = {
-  practiceName: "Family Dental Care",
-  practiceAddress: "456 Oak Avenue, Portland, OR 97201",
-  practiceWebsite: undefined,
-  practicePhone: "(503) 555-0123",
-  practiceEmail: undefined,
-  practiceSpecialty: "Family Dentistry",
-  numberOfDentists: 1,
-  numberOfHygienists: 2,
-  staff: [
-    { name: "Dr. James Wilson", role: "Dentist" },
-    { name: "Susan Martinez", role: "Hygienist" },
-    { name: "Tom Anderson", role: "Hygienist" }
-  ]
-}
-
-export const mockLeadDataLarge: LeadData = {
-  practiceName: "Metropolitan Dental Group",
-  practiceAddress: "789 Business Plaza, Suite 500, New York, NY 10001",
-  practiceWebsite: "https://metrodental.com",
-  practicePhone: "(212) 555-7890",
-  practiceEmail: "contact@metrodental.com",
-  practiceSpecialty: "Cosmetic & Restorative Dentistry",
-  numberOfDentists: 8,
-  numberOfHygienists: 12,
-  staff: [
-    { name: "Dr. Patricia Williams", role: "Chief Dentist" },
-    { name: "Dr. Robert Kim", role: "Cosmetic Dentist" },
-    { name: "Dr. Lisa Thompson", role: "Orthodontist" },
-    { name: "Dr. Mark Johnson", role: "Periodontist" },
-    { name: "Dr. Sarah Davis", role: "Endodontist" },
-    { name: "Dr. Michael Brown", role: "Oral Surgeon" },
-    { name: "Dr. Jennifer Wilson", role: "General Dentist" },
-    { name: "Dr. David Miller", role: "General Dentist" },
-    { name: "Emily Chen", role: "Senior Hygienist" },
-    { name: "Maria Rodriguez", role: "Hygienist" },
-    { name: "Jessica Lee", role: "Hygienist" },
-    { name: "Amanda Taylor", role: "Hygienist" },
-    { name: "Rachel Green", role: "Hygienist" },
-    { name: "Samantha White", role: "Hygienist" },
-    { name: "Nicole Harris", role: "Hygienist" },
-    { name: "Ashley Martin", role: "Hygienist" },
-    { name: "Brittany Clark", role: "Hygienist" },
-    { name: "Stephanie Lewis", role: "Hygienist" },
-    { name: "Danielle Walker", role: "Hygienist" },
-    { name: "Courtney Hall", role: "Hygienist" },
-    { name: "Megan Allen", role: "Hygienist" },
-    { name: "Laura Young", role: "Office Manager" },
-    { name: "Jennifer King", role: "Assistant Manager" },
-    { name: "Michelle Wright", role: "Dental Assistant" },
-    { name: "Kimberly Lopez", role: "Dental Assistant" },
-    { name: "Donna Hill", role: "Dental Assistant" },
-    { name: "Carol Scott", role: "Dental Assistant" },
-    { name: "Ruth Green", role: "Receptionist" },
-    { name: "Sharon Adams", role: "Receptionist" }
-  ]
-}
-
 
 export default function LeadView({ leadData }: LeadViewProps) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -236,7 +89,11 @@ export default function LeadView({ leadData }: LeadViewProps) {
     numberOfHygienists,
     staff,
     locations = [],
-    specialties = []
+    specialties = [],
+    resultingUrl,
+    personInCharge,
+    worksMultipleLocations,
+    scrapeNotes
   } = leadData
 
   // Filter data based on search and filters
@@ -270,10 +127,10 @@ export default function LeadView({ leadData }: LeadViewProps) {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <Card className="shadow-lg">
+    <div className="w-full h-full flex flex-col">
+      <Card className="shadow-lg flex-1 flex flex-col">
         {/* Fixed Header */}
-        <CardHeader className="pb-4 border-b">
+        <CardHeader className="pb-4 border-b shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
@@ -303,12 +160,12 @@ export default function LeadView({ leadData }: LeadViewProps) {
           </div>
         </CardHeader>
 
-         {/* Fixed Height Container with Tabs */}
-         <div className="h-[795px] flex flex-col">
+         {/* Flexible Height Container with Tabs */}
+         <div className="flex-1 flex flex-col min-h-0">
           <Tabs defaultValue="overview" className="flex-1 flex flex-col">
             {/* Tab Navigation - Fixed */}
             <div className="px-6 pt-4">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <Building className="h-4 w-4" />
                   Overview
@@ -328,10 +185,6 @@ export default function LeadView({ leadData }: LeadViewProps) {
                 <TabsTrigger value="analytics" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Analytics
-                </TabsTrigger>
-                <TabsTrigger value="research" className="flex items-center gap-2">
-                  <BookOpenCheck className="h-4 w-4" />
-                  Research
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -489,6 +342,79 @@ export default function LeadView({ leadData }: LeadViewProps) {
                         </CardContent>
                       </Card>
                     </div>
+
+                    {/* Scraper Information - Only show if scraper data is available */}
+                    {(resultingUrl || personInCharge || worksMultipleLocations !== undefined || scrapeNotes) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Globe className="h-5 w-5" />
+                              Source Information
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            {resultingUrl && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">Source URL:</span>
+                                <p className="mt-1">
+                                  <a 
+                                    href={resultingUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:text-primary/80 underline text-sm break-all"
+                                  >
+                                    {resultingUrl}
+                                  </a>
+                                </p>
+                              </div>
+                            )}
+                            
+                            {personInCharge && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">Person in Charge:</span>
+                                <div className="mt-1 text-sm">
+                                  <span className="font-medium">{personInCharge.name}</span>
+                                  {personInCharge.role && <span className="text-muted-foreground"> • {personInCharge.role}</span>}
+                                  {personInCharge.credentials && (
+                                    <Badge variant="outline" className="ml-2 text-xs">
+                                      {personInCharge.credentials}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {worksMultipleLocations !== undefined && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">Multiple Locations:</span>
+                                <div className="mt-1">
+                                  <Badge variant={worksMultipleLocations ? "default" : "secondary"}>
+                                    {worksMultipleLocations ? "Yes" : "No"}
+                                  </Badge>
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        {scrapeNotes && (
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <Lightbulb className="h-5 w-5" />
+                                Scrape Notes
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                {scrapeNotes}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    )}
                   </TabsContent>
 
                   {/* Locations Tab */}
@@ -542,6 +468,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
                              <TableRow>
                                <TableHead className="min-w-[200px]">Name</TableHead>
                                <TableHead className="min-w-[150px]">Role</TableHead>
+                               <TableHead className="min-w-[120px]">Credentials</TableHead>
                                <TableHead className="min-w-[150px]">Location</TableHead>
                                <TableHead className="min-w-[140px]">Phone</TableHead>
                                <TableHead className="min-w-[250px]">Email</TableHead>
@@ -555,6 +482,13 @@ export default function LeadView({ leadData }: LeadViewProps) {
                                    <Badge variant="outline" className="text-xs">
                                      {member.role}
                                    </Badge>
+                                 </TableCell>
+                                 <TableCell className="text-sm">
+                                   {member.credentials ? (
+                                     <span className="text-xs text-muted-foreground">{member.credentials}</span>
+                                   ) : (
+                                     <span className="text-xs text-muted-foreground/50">N/A</span>
+                                   )}
                                  </TableCell>
                                  <TableCell className="text-sm">{member.location || 'N/A'}</TableCell>
                                  <TableCell className="text-sm">
@@ -709,51 +643,16 @@ export default function LeadView({ leadData }: LeadViewProps) {
                     </div>
                   </TabsContent>
 
-                   {/* Research Tab */}
+                   {/* Research Tab - Placeholder for future AI reasoning data */}
                    <TabsContent value="research" className="space-y-4">
-                     <div className="flex items-center justify-between">
-                       <h3 className="text-lg font-semibold flex items-center gap-2">
-                         <BookOpenCheck className="h-5 w-5" />
-                         AI Research Analysis
-                       </h3>
-                       <Badge variant="outline" className="text-xs">
-                         Reasoning
-                       </Badge>
-                     </div>
-                     
-                     {/* Reasoning Content - Direct Implementation */}
-                     <div className="rounded-lg border bg-card shadow-sm">
-                       {/* Header */}
-                       <div className="flex items-center gap-2 p-4 border-b">
-                         <Lightbulb className="h-4 w-4 text-yellow-500" />
-                         <h3 className="font-medium text-sm">Reasoning</h3>
-                       </div>
-
-                       {/* Steps - Scrollable */}
-                       <div className="max-h-[500px] overflow-y-auto p-4">
-                         <div className="space-y-4">
-                           {mockReasoningSteps.map((step, index) => (
-                             <div key={index} className="space-y-2">
-                               <div className="flex items-start gap-3">
-                                 {step.icon && (
-                                   <div className="flex-shrink-0 mt-0.5">
-                                     {step.icon === "globe" && <Globe className="h-4 w-4 text-slate-500" />}
-                                     {step.icon === "check" && <Check className="h-4 w-4 text-green-500" />}
-                                     {step.icon === "info" && <BookOpenCheck className="h-4 w-4 text-blue-500" />}
-                                   </div>
-                                 )}
-                                 <div className="flex-1 min-w-0">
-                                   <h4 className="font-medium text-xs mb-1">{step.title}</h4>
-                                   <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
-                                     {step.body}
-                                   </p>
-                                 </div>
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       </div>
-                     </div>
+                     <Card>
+                       <CardContent className="text-center py-12">
+                         <BookOpenCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                         <p className="text-muted-foreground">
+                           AI Research analysis will appear here when available.
+                         </p>
+                       </CardContent>
+                     </Card>
                    </TabsContent>
                   </div>
                 </ScrollArea>

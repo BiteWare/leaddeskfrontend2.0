@@ -1,0 +1,248 @@
+"use client"
+
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import LeadView, { type LeadData } from '@/components/lead-view'
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebarCustom } from "@/components/app-sidebar-custom"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
+import { transformScraperOutputToLeadData } from '@/utils/scraper-transformer'
+import { useJobData } from '@/hooks/useJobData'
+
+function getStatusBadge(status: string, createdAt: string | null) {
+  // Check if job is stale (stuck in processing for too long)
+  const isJobStale = (): boolean => {
+    const processingStates = ['pending_url_search', 'url_worker_called', 'scraper_worker_called', 'queued', 'in_progress']
+    
+    if (!processingStates.includes(status)) {
+      return false
+    }
+    
+    if (!createdAt) {
+      return false
+    }
+    
+    const created = new Date(createdAt)
+    const now = new Date()
+    const ageInMinutes = (now.getTime() - created.getTime()) / (1000 * 60)
+    
+    // Consider jobs stale if they've been processing for more than 10 minutes
+    return ageInMinutes > 10
+  }
+
+  // Override status if job is stale
+  if (isJobStale()) {
+    return (
+      <Badge variant="destructive">
+        Timed Out
+      </Badge>
+    )
+  }
+
+  const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    'pending_url_search': {
+      label: 'Finding Website',
+      variant: 'secondary'
+    },
+    'url_worker_called': {
+      label: 'URL Search Started',
+      variant: 'secondary'
+    },
+    'url_worker_complete': {
+      label: 'Website Found',
+      variant: 'outline'
+    },
+    'scraper_worker_called': {
+      label: 'Analyzing Website',
+      variant: 'secondary'
+    },
+    'scraper_worker_complete': {
+      label: 'Completed',
+      variant: 'default'
+    },
+    'failed': {
+      label: 'Failed',
+      variant: 'destructive'
+    },
+    'expired': {
+      label: 'Expired',
+      variant: 'destructive'
+    },
+    'cancelled': {
+      label: 'Cancelled',
+      variant: 'outline'
+    }
+  }
+
+  const config = statusMap[status] || {
+    label: status,
+    variant: 'outline' as const
+  }
+
+  return (
+    <Badge variant={config.variant}>
+      {config.label}
+    </Badge>
+  )
+}
+
+export default function ResultsPage() {
+  const params = useParams()
+  // Decode URL parameter and clean it
+  const rawId = params.id as string
+  const correlationId = decodeURIComponent(rawId).replace(/^=/, '')
+  
+  console.log('🆔 Raw URL param:', rawId)
+  console.log('🆔 Cleaned correlation_id:', correlationId)
+  
+  const [leadData, setLeadData] = useState<LeadData | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Use the hook to fetch job data from database
+  const { job, loading, error, refetch } = useJobData(correlationId)
+  
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true)
+    await refetch()
+    setTimeout(() => setIsRefreshing(false), 500) // Show refresh animation briefly
+  }
+
+  useEffect(() => {
+    console.log('🎯 useEffect triggered, job:', {
+      hasJob: !!job,
+      status: job?.overall_job_status,
+      hasResults: !!job?.scraper_worker_results_json
+    })
+
+    if (job?.overall_job_status === 'scraper_worker_complete' && job.scraper_worker_results_json) {
+      console.log('🔍 Raw scraper_worker_results_json:', job.scraper_worker_results_json)
+      
+      try {
+        // Transform scraper output directly to LeadData using centralized transformer
+        // Pass job input data for fallback values
+        const transformedData = transformScraperOutputToLeadData(
+          job.scraper_worker_results_json,
+          {
+            input_customer_name: job.input_customer_name,
+            input_street_address: job.input_street_address,
+            input_city: job.input_city,
+            input_state: job.input_state
+          }
+        )
+        console.log('📊 Transformed lead data:', transformedData)
+        
+        if (transformedData) {
+          setLeadData(transformedData)
+          console.log('✅ LeadData set successfully!')
+        } else {
+          console.error('❌ Transformer returned null/undefined')
+        }
+      } catch (error) {
+        console.error('❌ Error transforming data:', error)
+      }
+    } else {
+      console.log('⚠️ Condition not met:', {
+        statusMatch: job?.overall_job_status === 'scraper_worker_complete',
+        hasResults: !!job?.scraper_worker_results_json
+      })
+    }
+  }, [job])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading job...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!job) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Job not found</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <SidebarProvider>
+      <AppSidebarCustom currentJobUrl={`/results/${correlationId}`} />
+      <SidebarInset>
+        <div className="flex flex-col h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+          {/* Header Bar */}
+          <header className="flex h-16 shrink-0 items-center gap-4 px-4 border-b bg-white">
+            <SidebarTrigger className="-ml-1" />
+            <h1 className="text-lg font-semibold">Job Results</h1>
+            
+            {/* Job Status Info in Header */}
+            <div className="flex-1 flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Practice:</span>
+                <span className="font-medium">{job.input_customer_name}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300" />
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Job ID:</span>
+                <span className="font-mono text-xs">{job.correlation_id}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300" />
+              {getStatusBadge(job.overall_job_status || 'unknown', job.created_at)}
+              <div className="h-4 w-px bg-gray-300" />
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Created:</span>
+                <span>{job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown'}</span>
+              </div>
+            </div>
+
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </header>
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-auto p-8">
+            {/* Results Display */}
+            {job?.overall_job_status === 'scraper_worker_complete' && leadData ? (
+              <LeadView leadData={leadData} />
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <p className="text-muted-foreground">
+                    Job results will appear here when processing is complete.
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Status: {job?.overall_job_status} | Has Data: {leadData ? 'Yes' : 'No'}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}

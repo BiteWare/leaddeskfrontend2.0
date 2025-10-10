@@ -14,9 +14,10 @@ interface SearchbarProps {
 export default function Searchbar({ onSearch, hasResults = false, onStartOver }: SearchbarProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (hasResults && onStartOver) {
+      setSearchQuery("") // Clear the input when starting over
       onStartOver()
     } else if (searchQuery.trim()) {
       onSearch(searchQuery.trim())
@@ -26,6 +27,15 @@ export default function Searchbar({ onSearch, hasResults = false, onStartOver }:
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSubmit(e)
+    }
+  }
+
+  const handleIconClick = () => {
+    if (hasResults && onStartOver) {
+      setSearchQuery("")
+      onStartOver()
+    } else if (searchQuery.trim()) {
+      onSearch(searchQuery.trim())
     }
   }
 
@@ -39,9 +49,15 @@ export default function Searchbar({ onSearch, hasResults = false, onStartOver }:
         className="absolute left-5 top-1/2 transform -translate-y-1/2 h-10 w-auto" 
       />
       {hasResults ? (
-        <RotateCw className="absolute right-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-pink-500 cursor-pointer" />
+        <RotateCw 
+          onClick={handleIconClick}
+          className="absolute right-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-pink-500 cursor-pointer hover:scale-110 transition-transform duration-200" 
+        />
       ) : (
-        <Search className="absolute right-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-pink-500" />
+        <Search 
+          onClick={handleIconClick}
+          className="absolute right-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-pink-500 cursor-pointer hover:scale-110 transition-transform duration-200" 
+        />
       )}
       <Input
         type="text"

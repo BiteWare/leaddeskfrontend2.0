@@ -7,31 +7,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     const webhookUrl = process.env.LEADDESK_WEBHOOK_URL!;
 
-    // Try to get the access token from the Authorization header
-    const authHeader = req.headers.get('authorization');
-    let user = null;
-    let authError = null;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const accessToken = authHeader.replace('Bearer ', '');
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
-      const { data, error } = await supabase.auth.getUser(accessToken);
-      user = data.user;
-      authError = error;
-    } else {
-      // Fallback to cookie-based auth
-      const supabase = createRouteHandlerClient(req);
-      const { data, error } = await supabase.auth.getUser();
-      user = data.user;
-      authError = error;
-    }
-
-    if (authError || !user) {
+    // Get user ID for job association
+    const supabase = createRouteHandlerClient(req);
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: "Authentication required" 
+        error: "Please sign in to submit jobs" 
       }), { status: 401 });
     }
 

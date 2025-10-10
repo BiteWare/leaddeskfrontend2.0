@@ -10,11 +10,11 @@ const icons = [
   { Icon: Building2, name: "building-2" },
 ]
 
-interface MorphingLoaderProps {
+interface JobLoaderProps {
   className?: string
 }
 
-export function MorphingLoader({ className }: MorphingLoaderProps) {
+export function JobLoader({ className }: JobLoaderProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   useEffect(() => {

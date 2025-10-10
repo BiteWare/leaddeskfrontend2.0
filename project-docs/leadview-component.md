@@ -60,27 +60,12 @@ interface StaffMember {
 }
 ```
 
-## Mock Data
+## Data Source
 
-The component includes three pre-configured mock data sets:
-
-### 1. `mockLeadData` (Default)
-- **Practice**: Bright Smiles Dental Clinic
-- **Specialty**: General Dentistry & Orthodontics
-- **Staff**: 3 dentists, 4 hygienists, 2 additional staff
-- **Complete Data**: All fields populated
-
-### 2. `mockLeadDataMinimal`
-- **Practice**: Family Dental Care
-- **Specialty**: Family Dentistry
-- **Staff**: 1 dentist, 2 hygienists
-- **Missing Data**: Tests handling of undefined website and email
-
-### 3. `mockLeadDataLarge`
-- **Practice**: Metropolitan Dental Group
-- **Specialty**: Cosmetic & Restorative Dentistry
-- **Staff**: 8 dentists, 12 hygienists, 10 additional staff
-- **Complete Data**: Large practice with extensive staff directory
+The component receives real-time data from the database:
+- Data is fetched from Supabase `enrichment_jobs` table
+- Transformed from `scraper_worker_results_json` field
+- No mock data is used in production
 
 ## Integration with Search Functionality
 
@@ -110,10 +95,12 @@ The main page (`app/page.tsx`) now includes:
 ### Basic Usage
 
 ```typescript
-import LeadView, { mockLeadData } from "@/components/lead-view"
+import LeadView from "@/components/lead-view"
+import { transformScraperOutputToLeadData } from "@/utils/scraper-transformer"
 
-function MyComponent() {
-  return <LeadView leadData={mockLeadData} />
+function MyComponent({ scraperData }) {
+  const leadData = transformScraperOutputToLeadData(scraperData)
+  return <LeadView leadData={leadData} />
 }
 ```
 
@@ -167,18 +154,18 @@ The component uses the project's existing CSS custom properties:
 ## Future Enhancements
 
 ### Planned Features
-1. **Backend Integration**: Replace mock data with actual API calls
-2. **Search Filtering**: Filter staff by role or department
-3. **Export Functionality**: Export practice data to PDF or CSV
-4. **Edit Mode**: Allow editing of practice information
-5. **Image Support**: Display practice photos or logos
+1. **Enhanced Search Filtering**: Filter staff by role or department
+2. **Export Functionality**: Export practice data to PDF or CSV
+3. **Edit Mode**: Allow editing of practice information
+4. **Image Support**: Display practice photos or logos
 
-### API Integration Points
-The component is designed to easily integrate with backend APIs:
-- Replace mock data in `handleSearch` function
-- Add error handling for failed API calls
-- Implement pagination for large staff directories
-- Add caching for frequently accessed data
+### Integration Points
+The component integrates with:
+- `utils/scraper-transformer.ts` for data transformation
+- `hooks/useJobData.ts` for fetching enrichment jobs
+- Supabase database for real-time data
+- Error handling for failed data fetches
+- Pagination for large staff directories (if needed)
 
 ## Testing Considerations
 
@@ -230,6 +217,6 @@ console.log('LeadView received data:', leadData)
 When modifying the LeadView component:
 1. Maintain TypeScript type safety
 2. Follow existing code style and patterns
-3. Test with all three mock data sets
+3. Test with real database data from various practices
 4. Ensure responsive design still works
 5. Update this documentation if adding new features
