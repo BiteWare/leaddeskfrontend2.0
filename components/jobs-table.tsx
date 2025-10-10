@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock, CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react"
 import type { EnrichmentJob } from '@/types/database.types'
 
@@ -37,7 +36,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
   const isJobStale = (job: EnrichmentJob): boolean => {
     const processingStates = ['pending_url_search', 'url_worker_called', 'scraper_worker_called', 'queued', 'in_progress']
     
-    if (!processingStates.includes(job.overall_job_status)) {
+    if (!job.overall_job_status || !processingStates.includes(job.overall_job_status)) {
       return false
     }
     
@@ -53,7 +52,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
     return ageInMinutes > 10
   }
 
-  const getStatusBadge = (status: string, job: EnrichmentJob) => {
+  const getStatusBadge = (status: string | null, job: EnrichmentJob) => {
     // Override status display if job is stale
     if (isJobStale(job)) {
       return (
@@ -117,8 +116,8 @@ export function JobsTable({ jobs }: JobsTableProps) {
       }
     }
 
-    const config = statusMap[status] || {
-      label: status,
+    const config = statusMap[status || 'unknown'] || {
+      label: status || 'Unknown',
       variant: 'outline' as const,
       icon: <Clock className="h-3 w-3" />
     }
@@ -131,7 +130,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
     )
   }
 
-  const isClickable = (status: string) => {
+  const isClickable = (status: string | null) => {
     return status === 'scraper_worker_complete'
   }
 
@@ -154,54 +153,47 @@ export function JobsTable({ jobs }: JobsTableProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Jobs</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Practice Info</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+    <div className="border rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Practice Info</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {jobs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                No jobs found
+              </TableCell>
+            </TableRow>
+          ) : (
+            jobs.map((job) => (
+              <TableRow
+                key={job.correlation_id}
+                onClick={() => handleRowClick(job)}
+                className={
+                  isClickable(job.overall_job_status)
+                    ? "cursor-pointer hover:bg-muted/50 transition-colors"
+                    : ""
+                }
+              >
+                <TableCell className="font-medium">
+                  {job.input_customer_name}
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(job.overall_job_status, job)}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatDate(job.created_at)}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {jobs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                    No jobs found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                jobs.map((job) => (
-                  <TableRow
-                    key={job.correlation_id}
-                    onClick={() => handleRowClick(job)}
-                    className={
-                      isClickable(job.overall_job_status)
-                        ? "cursor-pointer hover:bg-muted/50 transition-colors"
-                        : ""
-                    }
-                  >
-                    <TableCell className="font-medium">
-                      {job.input_customer_name}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(job.overall_job_status, job)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(job.created_at)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

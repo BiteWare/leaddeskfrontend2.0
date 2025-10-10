@@ -56,12 +56,13 @@ export default function Searchbar({ onSearch, hasResults = false, onStartOver }:
       ) : (
         <Search 
           onClick={handleIconClick}
+          strokeWidth={3}
           className="absolute right-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-pink-500 cursor-pointer hover:scale-110 transition-transform duration-200" 
         />
       )}
       <Input
         type="text"
-        placeholder="Search for practices"
+        placeholder="Paste Practice Name, and Address to Search"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onKeyPress={handleKeyPress}

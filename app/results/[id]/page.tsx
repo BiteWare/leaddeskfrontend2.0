@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { RefreshCw } from "lucide-react"
 import { transformScraperOutputToLeadData } from '@/utils/scraper-transformer'
 import { useJobData } from '@/hooks/useJobData'
+import { StepProgression } from '@/components/step-progression'
 
 function getStatusBadge(status: string, createdAt: string | null) {
   // Check if job is stale (stuck in processing for too long)
@@ -151,6 +152,7 @@ export default function ResultsPage() {
     }
   }, [job])
 
+  // Show initial loading spinner only when actively loading
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -162,6 +164,7 @@ export default function ResultsPage() {
     )
   }
 
+  // Show error only if there's an actual error
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -172,16 +175,8 @@ export default function ResultsPage() {
     )
   }
 
-  if (!job) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Job not found</p>
-        </div>
-      </div>
-    )
-  }
-
+  // If no job data yet, show step progression (waiting for webhook to create job)
+  // This is normal and not an error - the webhook just hasn't responded yet
   return (
     <SidebarProvider>
       <AppSidebarCustom currentJobUrl={`/results/${correlationId}`} />
@@ -192,35 +187,47 @@ export default function ResultsPage() {
             <SidebarTrigger className="-ml-1" />
             <h1 className="text-lg font-semibold">Job Results</h1>
             
-            {/* Job Status Info in Header */}
-            <div className="flex-1 flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Practice:</span>
-                <span className="font-medium">{job.input_customer_name}</span>
-              </div>
-              <div className="h-4 w-px bg-gray-300" />
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Job ID:</span>
-                <span className="font-mono text-xs">{job.correlation_id}</span>
-              </div>
-              <div className="h-4 w-px bg-gray-300" />
-              {getStatusBadge(job.overall_job_status || 'unknown', job.created_at)}
-              <div className="h-4 w-px bg-gray-300" />
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Created:</span>
-                <span>{job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown'}</span>
-              </div>
-            </div>
+            {/* Job Status Info in Header - only show if job exists */}
+            {job && (
+              <>
+                <div className="flex-1 flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Practice:</span>
+                    <span className="font-medium">{job.input_customer_name}</span>
+                  </div>
+                  <div className="h-4 w-px bg-gray-300" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Job ID:</span>
+                    <span className="font-mono text-xs">{job.correlation_id}</span>
+                  </div>
+                  <div className="h-4 w-px bg-gray-300" />
+                  {getStatusBadge(job.overall_job_status || 'unknown', job.created_at)}
+                  <div className="h-4 w-px bg-gray-300" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Created:</span>
+                    <span>{job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown'}</span>
+                  </div>
+                </div>
 
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleManualRefresh}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </>
+            )}
+            
+            {/* If no job yet, show waiting message */}
+            {!job && (
+              <div className="flex-1 flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600"></div>
+                <span>Waiting for job to be created...</span>
+              </div>
+            )}
           </header>
 
           {/* Main Content */}
@@ -229,16 +236,9 @@ export default function ResultsPage() {
             {job?.overall_job_status === 'scraper_worker_complete' && leadData ? (
               <LeadView leadData={leadData} />
             ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <p className="text-muted-foreground">
-                    Job results will appear here when processing is complete.
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Status: {job?.overall_job_status} | Has Data: {leadData ? 'Yes' : 'No'}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]">
+                <StepProgression isComplete={job?.overall_job_status === 'scraper_worker_complete'} />
+              </div>
             )}
           </div>
         </div>

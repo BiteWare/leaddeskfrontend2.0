@@ -93,3 +93,18 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom breathing animation - placed after Tailwind layers */
+@keyframes breathe-slow {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.animate-breathe-slow {
+  animation: breathe-slow 20s ease-in-out infinite !important;
+  transform-origin: center;
+}

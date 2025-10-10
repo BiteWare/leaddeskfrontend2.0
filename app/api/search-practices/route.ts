@@ -45,10 +45,18 @@ export async function POST(req: Request) {
 
     // Submit enrichment job to n8n dispatcher
     const dispatcherUrl = process.env.LEADDESK_DISPATCHER_WEBHOOK_URL;
+    
+    console.log('🔧 Environment check:', {
+      hasDispatcherUrl: !!dispatcherUrl,
+      urlLength: dispatcherUrl?.length,
+      urlPreview: dispatcherUrl?.substring(0, 30) + '...',
+    });
+    
     if (!dispatcherUrl) {
+      console.error('❌ LEADDESK_DISPATCHER_WEBHOOK_URL not set');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: "Dispatcher webhook URL not configured" 
+        error: "Dispatcher webhook URL not configured. Please check environment variables." 
       }), { status: 500 });
     }
 
