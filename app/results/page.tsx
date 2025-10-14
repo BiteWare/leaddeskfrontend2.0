@@ -21,22 +21,60 @@ export default function ResultsListPage() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        console.log('✅ User authenticated, fetching jobs...')
+        console.log('✅ User authenticated, fetching jobs...', { userId: user.id, userEmail: user.email })
         
-        // Fetch all jobs (no filtering needed with RLS)
+        // Fetch all jobs (RLS will need to be adjusted to allow viewing all jobs)
         const { data: allJobsData, error: allJobsError } = await supabase
           .from('enrichment_jobs')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(100)
 
-        console.log('📊 Jobs query result:', { 
-          count: allJobsData?.length || 0, 
-          error: allJobsError?.message
+        console.log('📊 Raw jobs data:', { 
+          count: allJobsData?.length,
+          sample: allJobsData?.[0]
+        })
+
+        // Fetch user emails from API endpoint
+        let userEmails: Record<string, string> = {}
+        try {
+          const userEmailsResponse = await fetch('/api/get-job-users')
+          const data = await userEmailsResponse.json()
+          userEmails = data.userEmails || {}
+          console.log('📊 User emails fetched:', { count: Object.keys(userEmails).length })
+        } catch (error) {
+          console.warn('⚠️ Failed to fetch user emails:', error)
+        }
+        
+        // Enrich jobs with user email - use current user's email for their jobs
+        const currentUserEmail = user.email || 'Unknown'
+        const enrichedAllJobs = allJobsData?.map(job => ({
+          ...job,
+          users: job.run_user_id 
+            ? { 
+                email: job.run_user_id === user.id 
+                  ? currentUserEmail 
+                  : (userEmails[job.run_user_id] || job.run_user_id.substring(0, 8) + '...')
+              }
+            : null
+        })) || []
+
+        console.log('📊 All jobs query result:', { 
+          count: enrichedAllJobs.length, 
+          error: allJobsError?.message,
+          enrichedSample: enrichedAllJobs[0]
+        })
+
+        // Filter for current user's jobs
+        const myJobsData = enrichedAllJobs.filter(job => job.run_user_id === user.id)
+
+        console.log('📊 My jobs query result:', { 
+          count: myJobsData.length,
+          userId: user.id
         })
         
-        setAllJobs(allJobsData || [])
-        setUserJobs(allJobsData || []) // RLS will filter for us
+        setAllJobs(enrichedAllJobs as EnrichmentJob[])
+        setUserJobs(myJobsData as EnrichmentJob[])
       } else {
         console.log('❌ No user found')
       }

@@ -23,7 +23,9 @@ import {
   Search,
   X,
   Check,
-  Lightbulb
+  Lightbulb,
+  Code,
+  Copy
 } from "lucide-react"
 
 export interface StaffMember {
@@ -67,6 +69,8 @@ export interface LeadData {
   }
   worksMultipleLocations?: boolean
   scrapeNotes?: string
+  // Raw JSON data
+  rawJson?: any
 }
 
 interface LeadViewProps {
@@ -77,6 +81,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [stateFilter, setStateFilter] = useState('all')
   const [roleFilter, setRoleFilter] = useState('all')
+  const [copySuccess, setCopySuccess] = useState(false)
 
   const {
     practiceName,
@@ -93,7 +98,8 @@ export default function LeadView({ leadData }: LeadViewProps) {
     resultingUrl,
     personInCharge,
     worksMultipleLocations,
-    scrapeNotes
+    scrapeNotes,
+    rawJson
   } = leadData
 
   // Filter data based on search and filters
@@ -124,6 +130,18 @@ export default function LeadView({ leadData }: LeadViewProps) {
     setSearchTerm('')
     setStateFilter('all')
     setRoleFilter('all')
+  }
+
+  const copyToClipboard = async () => {
+    if (rawJson) {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(rawJson, null, 2))
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 2000)
+      } catch (err) {
+        console.error('Failed to copy:', err)
+      }
+    }
   }
 
   return (
@@ -165,7 +183,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
           <Tabs defaultValue="overview" className="flex-1 flex flex-col">
             {/* Tab Navigation - Fixed */}
             <div className="px-6 pt-4">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <Building className="h-4 w-4" />
                   Overview
@@ -185,6 +203,10 @@ export default function LeadView({ leadData }: LeadViewProps) {
                 <TabsTrigger value="analytics" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Analytics
+                </TabsTrigger>
+                <TabsTrigger value="raw-data" className="flex items-center gap-2">
+                  <Code className="h-4 w-4" />
+                  Raw Data
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -651,6 +673,52 @@ export default function LeadView({ leadData }: LeadViewProps) {
                          <p className="text-muted-foreground">
                            AI Research analysis will appear here when available.
                          </p>
+                       </CardContent>
+                     </Card>
+                   </TabsContent>
+
+                   {/* Raw Data Tab */}
+                   <TabsContent value="raw-data" className="space-y-4">
+                     <Card>
+                       <CardHeader>
+                         <div className="flex items-center justify-between">
+                           <CardTitle className="flex items-center gap-2">
+                             <Code className="h-5 w-5" />
+                             Raw JSON Data
+                           </CardTitle>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={copyToClipboard}
+                             className="flex items-center gap-2"
+                           >
+                             {copySuccess ? (
+                               <>
+                                 <Check className="h-4 w-4 text-green-600" />
+                                 Copied!
+                               </>
+                             ) : (
+                               <>
+                                 <Copy className="h-4 w-4" />
+                                 Copy to Clipboard
+                               </>
+                             )}
+                           </Button>
+                         </div>
+                       </CardHeader>
+                       <CardContent>
+                         {rawJson ? (
+                           <div className="relative w-full">
+                             <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-y-auto overflow-x-hidden max-h-[600px] text-sm whitespace-pre-wrap break-words w-full">
+                               <code className="block w-full">{JSON.stringify(rawJson, null, 2)}</code>
+                             </pre>
+                           </div>
+                         ) : (
+                           <div className="text-center py-8 text-muted-foreground">
+                             <Code className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                             <p>No raw data available</p>
+                           </div>
+                         )}
                        </CardContent>
                      </Card>
                    </TabsContent>

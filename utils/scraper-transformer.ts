@@ -52,6 +52,7 @@ export function transformScraperOutputToLeadData(
       personInCharge: undefined,
       worksMultipleLocations: undefined,
       scrapeNotes: undefined,
+      rawJson: scraperWorkerResultsJson,
     }
   }
 
@@ -170,7 +171,9 @@ export function transformScraperOutputToLeadData(
     resultingUrl: scraperOutput.resulting_url,
     personInCharge: scraperOutput.person_in_charge,
     worksMultipleLocations: scraperOutput.works_multiple_locations,
-    scrapeNotes: scraperOutput.scrape_notes
+    scrapeNotes: scraperOutput.scrape_notes,
+    // Add raw JSON data
+    rawJson: scraperWorkerResultsJson
   }
 }
 

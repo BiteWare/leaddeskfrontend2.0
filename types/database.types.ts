@@ -186,6 +186,10 @@ export type User = Tables<'users'>
 export type UserInsert = TablesInsert<'users'>
 export type UserUpdate = TablesUpdate<'users'>
 
-export type EnrichmentJob = Tables<'enrichment_jobs'>
+export type EnrichmentJob = Tables<'enrichment_jobs'> & {
+  users?: {
+    email: string
+  } | null
+}
 export type EnrichmentJobInsert = TablesInsert<'enrichment_jobs'>
 export type EnrichmentJobUpdate = TablesUpdate<'enrichment_jobs'> 

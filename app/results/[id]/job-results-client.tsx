@@ -56,7 +56,7 @@ export function JobResultsClient({ userJobs, allJobs, correlationId }: JobResult
           </div>
         </CardHeader>
         <CardContent>
-          <JobsTable jobs={displayedJobs} />
+          <JobsTable jobs={displayedJobs} showCreatedBy={showAllJobs} />
         </CardContent>
       </Card>
     </div>

@@ -1,18 +1,21 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Clock, CheckCircle2, XCircle, Loader2, AlertCircle, Search } from "lucide-react"
 import type { EnrichmentJob } from '@/types/database.types'
 
 interface JobsTableProps {
   jobs: EnrichmentJob[]
+  showCreatedBy?: boolean
 }
 
-export function JobsTable({ jobs }: JobsTableProps) {
+export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
   const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState('')
   
   console.log('🔍 JobsTable received jobs:', { 
     count: jobs.length, 
@@ -22,6 +25,22 @@ export function JobsTable({ jobs }: JobsTableProps) {
       overall_job_status: j.overall_job_status 
     }))
   })
+
+  // Filter jobs based on search query
+  const filteredJobs = useMemo(() => {
+    if (!searchQuery.trim()) return jobs
+
+    const query = searchQuery.toLowerCase()
+    return jobs.filter(job => {
+      const practiceName = job.input_customer_name?.toLowerCase() || ''
+      const address = `${job.input_street_address || ''} ${job.input_city || ''} ${job.input_state || ''}`.toLowerCase()
+      const jobId = job.correlation_id?.toLowerCase() || ''
+      
+      return practiceName.includes(query) || 
+             address.includes(query) || 
+             jobId.includes(query)
+    })
+  }, [jobs, searchQuery])
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
@@ -153,47 +172,74 @@ export function JobsTable({ jobs }: JobsTableProps) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Practice Info</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {jobs.length === 0 ? (
+    <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by practice name, address, or job ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Results Count */}
+      {searchQuery && (
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredJobs.length} of {jobs.length} jobs
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                No jobs found
-              </TableCell>
+              <TableHead>Practice Info</TableHead>
+              <TableHead>Status</TableHead>
+              {showCreatedBy && <TableHead>Created By</TableHead>}
+              <TableHead>Created</TableHead>
             </TableRow>
-          ) : (
-            jobs.map((job) => (
-              <TableRow
-                key={job.correlation_id}
-                onClick={() => handleRowClick(job)}
-                className={
-                  isClickable(job.overall_job_status)
-                    ? "cursor-pointer hover:bg-muted/50 transition-colors"
-                    : ""
-                }
-              >
-                <TableCell className="font-medium">
-                  {job.input_customer_name}
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(job.overall_job_status, job)}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatDate(job.created_at)}
+          </TableHeader>
+          <TableBody>
+            {filteredJobs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={showCreatedBy ? 4 : 3} className="text-center text-muted-foreground py-8">
+                  {searchQuery ? 'No jobs match your search' : 'No jobs found'}
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              filteredJobs.map((job) => (
+                <TableRow
+                  key={job.correlation_id}
+                  onClick={() => handleRowClick(job)}
+                  className={
+                    isClickable(job.overall_job_status)
+                      ? "cursor-pointer hover:bg-muted/50 transition-colors"
+                      : ""
+                  }
+                >
+                  <TableCell className="font-medium">
+                    {job.input_customer_name}
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(job.overall_job_status, job)}
+                  </TableCell>
+                  {showCreatedBy && (
+                    <TableCell className="text-muted-foreground">
+                      {job.users?.email || 'Unknown'}
+                    </TableCell>
+                  )}
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(job.created_at)}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

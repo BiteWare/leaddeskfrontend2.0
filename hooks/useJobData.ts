@@ -21,6 +21,8 @@ export function useJobData(correlationId: string): UseJobDataReturn {
   const [error, setError] = useState<string | null>(null)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const isInitialFetch = useRef(true)
+  const startTimeRef = useRef<number>(Date.now())
+  const GRACE_PERIOD_MS = 30000 // 30 seconds grace period before showing "Job not found" error
 
   const fetchJob = useCallback(async () => {
     if (!correlationId) {
@@ -64,6 +66,7 @@ export function useJobData(correlationId: string): UseJobDataReturn {
 
       if (jobData) {
         setJob(jobData)
+        setError(null) // Clear any previous errors once job is found
         console.log('📊 Job data received:', {
           correlation_id: jobData.correlation_id,
           status: jobData.overall_job_status,
@@ -94,8 +97,17 @@ export function useJobData(correlationId: string): UseJobDataReturn {
           console.log('⚠️ Job NOT complete - still in state:', jobData.overall_job_status)
         }
       } else {
-        console.warn('⚠️ No job found with correlation_id:', correlationId)
-        setError('Job not found')
+        // Job not found - check if we're still within grace period
+        const elapsedTime = Date.now() - startTimeRef.current
+        
+        if (elapsedTime < GRACE_PERIOD_MS) {
+          console.log(`⏳ Job not found yet, within grace period (${Math.round(elapsedTime / 1000)}s / ${GRACE_PERIOD_MS / 1000}s)`)
+          // Don't set error during grace period - this is normal while webhook processes
+          setError(null)
+        } else {
+          console.warn('⚠️ No job found with correlation_id after grace period:', correlationId)
+          setError('Job not found. The job may have failed to initialize or the correlation ID may be invalid.')
+        }
       }
     } catch (err) {
       console.error('❌ Error fetching job data:', err)
