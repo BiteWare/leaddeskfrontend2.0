@@ -343,6 +343,19 @@ export default function LeadView({ leadData }: LeadViewProps) {
                               )}
                             </p>
                           </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">Phone:</span>
+                            <p className="mt-1">
+                              {practicePhone ? (
+                                <span className="flex items-center gap-1 text-foreground">
+                                  <Phone className="h-4 w-4" />
+                                  {practicePhone}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">Not available</span>
+                              )}
+                            </p>
+                          </div>
                         </CardContent>
                       </Card>
 
@@ -462,9 +475,13 @@ export default function LeadView({ leadData }: LeadViewProps) {
                               <TableCell className="font-medium">{location.name}</TableCell>
                               <TableCell>{location.address}</TableCell>
                               <TableCell>
-                                <a href={`tel:${location.phone}`} className="text-primary hover:text-primary/80">
-                                  {location.phone}
-                                </a>
+                                {location.phone ? (
+                                  <a href={`tel:${location.phone}`} className="text-primary hover:text-primary/80">
+                                    {location.phone}
+                                  </a>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">N/A</span>
+                                )}
                               </TableCell>
                               <TableCell>{location.manager}</TableCell>
                               <TableCell>{location.staffCount}</TableCell>

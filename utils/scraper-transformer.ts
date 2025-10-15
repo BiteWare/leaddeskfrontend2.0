@@ -14,6 +14,17 @@ export interface JobInputData {
 }
 
 /**
+ * Normalizes a value by converting empty strings and whitespace-only strings to undefined
+ * This ensures empty fields display as "Not available" instead of blank in the UI
+ */
+function normalizeValue(value: any): any {
+  if (typeof value === 'string' && value.trim() === '') {
+    return undefined
+  }
+  return value || undefined
+}
+
+/**
  * Transforms scraper output directly to LeadData format
  * This is the SINGLE SOURCE OF TRUTH for transformation logic
  * 
@@ -72,8 +83,8 @@ export function transformScraperOutputToLeadData(
     id: (index + 1).toString(),
     name: loc.name || `Location ${index + 1}`,
     address: loc.address || '',
-    phone: loc.phone || '',
-    email: loc.email || '',
+    phone: normalizeValue(loc.phone) || '',
+    email: normalizeValue(loc.email) || '',
     manager: loc.manager || 'Unknown',
     staffCount: loc.staff_at_location?.length || 0,
     state: loc.state || 'Unknown'
@@ -92,8 +103,8 @@ export function transformScraperOutputToLeadData(
         id: '1',
         name: jobInputData.input_customer_name || 'Main Office',
         address: inputAddress,
-        phone: '',
-        email: '',
+        phone: normalizeValue(scraperOutput.phone) || '',
+        email: normalizeValue(scraperOutput.email) || '',
         manager: 'Unknown',
         staffCount: 0,
         state: jobInputData.input_state || 'Unknown'
@@ -101,12 +112,13 @@ export function transformScraperOutputToLeadData(
     }
   }
 
-  // Transform staff
-  const staff: any[] = []
+  // Transform staff with deduplication
+  const staffMap = new Map<string, any>()
   
-  // Add person in charge first
-  if (scraperOutput.person_in_charge) {
-    staff.push({
+  // Add person in charge first (only if name is not empty)
+  if (scraperOutput.person_in_charge?.name && scraperOutput.person_in_charge.name.trim() !== '') {
+    const key = scraperOutput.person_in_charge.name.trim().toLowerCase()
+    staffMap.set(key, {
       name: scraperOutput.person_in_charge.name,
       role: scraperOutput.person_in_charge.role,
       credentials: scraperOutput.person_in_charge.credentials,
@@ -116,37 +128,58 @@ export function transformScraperOutputToLeadData(
     })
   }
 
-  // Add all staff from staff_list
+  // Add all staff from staff_list (skip if already exists)
   if (scraperOutput.staff_list) {
     scraperOutput.staff_list.forEach((member: any) => {
-      staff.push({
-        name: member.name,
-        role: member.role,
-        credentials: member.credentials,
-        location: undefined,
-        phone: undefined,
-        email: undefined
-      })
+      if (member.name && member.name.trim() !== '') {
+        const key = member.name.trim().toLowerCase()
+        // Only add if not already in map
+        if (!staffMap.has(key)) {
+          staffMap.set(key, {
+            name: member.name,
+            role: member.role,
+            credentials: member.credentials,
+            location: undefined,
+            phone: undefined,
+            email: undefined
+          })
+        }
+      }
     })
   }
 
-  // Add staff from locations
+  // Add staff from locations (skip if already exists)
   if (scraperOutput.locations) {
     scraperOutput.locations.forEach((location: any) => {
       if (location.staff_at_location) {
         location.staff_at_location.forEach((member: any) => {
-          staff.push({
-            name: member.name,
-            role: member.role,
-            credentials: member.credentials,
-            location: location.name,
-            phone: undefined,
-            email: undefined
-          })
+          if (member.name && member.name.trim() !== '') {
+            const key = member.name.trim().toLowerCase()
+            // Only add if not already in map, or update location if already exists
+            if (!staffMap.has(key)) {
+              staffMap.set(key, {
+                name: member.name,
+                role: member.role,
+                credentials: member.credentials,
+                location: location.name,
+                phone: undefined,
+                email: undefined
+              })
+            } else {
+              // Update location if staff already exists but didn't have a location
+              const existing = staffMap.get(key)
+              if (!existing.location) {
+                existing.location = location.name
+              }
+            }
+          }
         })
       }
     })
   }
+
+  // Convert map to array
+  const staff = Array.from(staffMap.values())
 
   // Build full address from job input as fallback
   const fallbackFullAddress = jobInputData ? [
@@ -159,8 +192,8 @@ export function transformScraperOutputToLeadData(
     practiceName: scraperOutput.practice_name || jobInputData?.input_customer_name || 'Unknown Practice',
     practiceAddress: locations[0]?.address || scraperOutput.locations?.[0]?.address || fallbackFullAddress,
     practiceWebsite: scraperOutput.resulting_url || scraperOutput.website || undefined,
-    practicePhone: scraperOutput.phone || undefined,
-    practiceEmail: scraperOutput.email || undefined,
+    practicePhone: normalizeValue(scraperOutput.phone),
+    practiceEmail: normalizeValue(scraperOutput.email),
     practiceSpecialty: scraperOutput.practice_specialties?.join(', ') || 'General Practice',
     numberOfDentists: dentists.length,
     numberOfHygienists: hygienists.length,
