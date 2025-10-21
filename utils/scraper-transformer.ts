@@ -264,9 +264,13 @@ export function transformScraperOutputToLeadData(
     jobInputData.input_state
   ].filter(Boolean).join(', ') : 'Address not available'
 
+  console.log('🔧 First location address:', locations[0]?.address)
+  console.log('🔧 Fallback address:', fallbackFullAddress)
+  console.log('🔧 Final practice address will be:', locations[0]?.address || scraperOutput.locations?.[0]?.address || fallbackFullAddress)
+
   return {
     practiceName: String(scraperOutput.practice_name || jobInputData?.input_customer_name || 'Unknown Practice'),
-    practiceAddress: String(locations[0]?.address || scraperOutput.locations?.[0]?.address || fallbackFullAddress),
+    practiceAddress: locations[0]?.address || scraperOutput.locations?.[0]?.address || fallbackFullAddress,
     practiceWebsite: scraperOutput.resulting_url || scraperOutput.website || undefined,
     practicePhone: normalizeValue(scraperOutput.phone),
     practiceEmail: normalizeValue(scraperOutput.email),
