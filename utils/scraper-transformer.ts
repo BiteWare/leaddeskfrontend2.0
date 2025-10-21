@@ -41,6 +41,7 @@ export function transformScraperOutputToLeadData(
   console.log('🔧 Transformer - Parsed scraper output:', scraperOutput)
   console.log('🔧 Transformer - Job input data:', jobInputData)
   console.log('🔧 Available fields:', Object.keys(scraperOutput || {}))
+  console.log('🔧 Raw locations from scraper:', scraperOutput?.locations)
   
   // Build fallback address from job input
   const fallbackAddress = jobInputData ? [
@@ -130,16 +131,27 @@ export function transformScraperOutputToLeadData(
   }
 
   // Transform locations with enhanced parsing
-  let locations = scraperOutput.locations?.map((loc: any, index: number) => ({
-    id: (index + 1).toString(),
-    name: parseLocationName(loc, index, scraperOutput.practice_name),
-    address: loc.address || '',
-    phone: normalizeValue(loc.phone) || '',
-    email: normalizeValue(loc.email) || '',
-    manager: loc.manager || 'Unknown',
-    staffCount: loc.staff_at_location?.length || 0,
-    state: loc.state || 'Unknown'
-  })) || []
+  let locations = scraperOutput.locations?.map((loc: any, index: number) => {
+    // Ensure all properties are strings to prevent React rendering errors
+    const safeString = (value: any): string => {
+      if (typeof value === 'string') return value
+      if (value === null || value === undefined) return ''
+      return String(value)
+    }
+
+    return {
+      id: (index + 1).toString(),
+      name: safeString(parseLocationName(loc, index, scraperOutput.practice_name)),
+      address: safeString(loc.address || ''),
+      phone: safeString(normalizeValue(loc.phone) || ''),
+      email: safeString(normalizeValue(loc.email) || ''),
+      manager: safeString(loc.manager || 'Unknown'),
+      staffCount: typeof loc.staff_at_location?.length === 'number' ? loc.staff_at_location.length : 0,
+      state: safeString(loc.state || 'Unknown')
+    }
+  }) || []
+
+  console.log('🔧 Transformed locations:', locations)
 
   // If no locations from scraper but we have job input data, create a location entry
   if (locations.length === 0 && jobInputData) {
@@ -235,8 +247,15 @@ export function transformScraperOutputToLeadData(
     })
   }
 
-  // Convert map to array
-  const staff = Array.from(staffMap.values())
+  // Convert map to array and ensure all properties are strings
+  const staff = Array.from(staffMap.values()).map(member => ({
+    name: String(member.name || ''),
+    role: String(member.role || ''),
+    location: member.location ? String(member.location) : undefined,
+    phone: member.phone ? String(member.phone) : undefined,
+    email: member.email ? String(member.email) : undefined,
+    credentials: member.credentials ? String(member.credentials) : undefined
+  }))
 
   // Build full address from job input as fallback
   const fallbackFullAddress = jobInputData ? [
@@ -246,12 +265,12 @@ export function transformScraperOutputToLeadData(
   ].filter(Boolean).join(', ') : 'Address not available'
 
   return {
-    practiceName: scraperOutput.practice_name || jobInputData?.input_customer_name || 'Unknown Practice',
-    practiceAddress: locations[0]?.address || scraperOutput.locations?.[0]?.address || fallbackFullAddress,
+    practiceName: String(scraperOutput.practice_name || jobInputData?.input_customer_name || 'Unknown Practice'),
+    practiceAddress: String(locations[0]?.address || scraperOutput.locations?.[0]?.address || fallbackFullAddress),
     practiceWebsite: scraperOutput.resulting_url || scraperOutput.website || undefined,
     practicePhone: normalizeValue(scraperOutput.phone),
     practiceEmail: normalizeValue(scraperOutput.email),
-    practiceSpecialty: scraperOutput.practice_specialties?.join(', ') || 'General Practice',
+    practiceSpecialty: String(scraperOutput.practice_specialties?.join(', ') || 'General Practice'),
     numberOfDentists: dentists.length,
     numberOfHygienists: hygienists.length,
     specialties: scraperOutput.practice_specialties || [],
