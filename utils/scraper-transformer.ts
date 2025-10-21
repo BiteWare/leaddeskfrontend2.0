@@ -78,10 +78,61 @@ export function transformScraperOutputToLeadData(
     s.role?.toLowerCase().includes('hygienist')
   ) || []
 
-  // Transform locations
+  // Enhanced location parsing function
+  const parseLocationName = (loc: any, index: number, practiceName: string): string => {
+    // If we have a meaningful name, use it
+    if (loc.name && loc.name.trim() && !loc.name.toLowerCase().includes('location')) {
+      return loc.name.trim()
+    }
+    
+    // Try to extract location info from address
+    if (loc.address && loc.address.trim()) {
+      const address = loc.address.trim()
+      // Look for common location indicators in address
+      const locationIndicators = ['office', 'clinic', 'center', 'building', 'suite', 'floor']
+      const addressLower = address.toLowerCase()
+      
+      for (const indicator of locationIndicators) {
+        if (addressLower.includes(indicator)) {
+          // Extract text around the indicator
+          const parts = address.split(/\s+/)
+          const indicatorIndex = parts.findIndex((part: string) => 
+            part.toLowerCase().includes(indicator)
+          )
+          if (indicatorIndex >= 0) {
+            // Take 2-3 words around the indicator
+            const start = Math.max(0, indicatorIndex - 1)
+            const end = Math.min(parts.length, indicatorIndex + 3)
+            return parts.slice(start, end).join(' ')
+          }
+        }
+      }
+      
+      // If no indicators found, use first part of address
+      const firstPart = address.split(',')[0].trim()
+      if (firstPart && firstPart.length > 3) {
+        return firstPart
+      }
+    }
+    
+    // Try to use practice name with location suffix
+    if (practiceName && practiceName.trim()) {
+      const baseName = practiceName.trim()
+      if (index === 0) {
+        return `${baseName} - Main Office`
+      } else {
+        return `${baseName} - Location ${index + 1}`
+      }
+    }
+    
+    // Final fallback
+    return `Location ${index + 1}`
+  }
+
+  // Transform locations with enhanced parsing
   let locations = scraperOutput.locations?.map((loc: any, index: number) => ({
     id: (index + 1).toString(),
-    name: loc.name || `Location ${index + 1}`,
+    name: parseLocationName(loc, index, scraperOutput.practice_name),
     address: loc.address || '',
     phone: normalizeValue(loc.phone) || '',
     email: normalizeValue(loc.email) || '',
@@ -99,9 +150,15 @@ export function transformScraperOutputToLeadData(
     ].filter(Boolean).join(', ')
     
     if (inputAddress) {
+      // Create a more meaningful location name
+      const practiceName = jobInputData.input_customer_name || scraperOutput.practice_name || 'Practice'
+      const locationName = practiceName.includes('Office') || practiceName.includes('Clinic') 
+        ? practiceName 
+        : `${practiceName} - Main Office`
+      
       locations = [{
         id: '1',
-        name: jobInputData.input_customer_name || 'Main Office',
+        name: locationName,
         address: inputAddress,
         phone: normalizeValue(scraperOutput.phone) || '',
         email: normalizeValue(scraperOutput.email) || '',
