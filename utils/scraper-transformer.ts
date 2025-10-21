@@ -81,12 +81,12 @@ export function transformScraperOutputToLeadData(
   // Enhanced location parsing function
   const parseLocationName = (loc: any, index: number, practiceName: string): string => {
     // If we have a meaningful name, use it
-    if (loc.name && loc.name.trim() && !loc.name.toLowerCase().includes('location')) {
+    if (loc.name && typeof loc.name === 'string' && loc.name.trim() && !loc.name.toLowerCase().includes('location')) {
       return loc.name.trim()
     }
     
     // Try to extract location info from address
-    if (loc.address && loc.address.trim()) {
+    if (loc.address && typeof loc.address === 'string' && loc.address.trim()) {
       const address = loc.address.trim()
       // Look for common location indicators in address
       const locationIndicators = ['office', 'clinic', 'center', 'building', 'suite', 'floor']
@@ -116,7 +116,7 @@ export function transformScraperOutputToLeadData(
     }
     
     // Try to use practice name with location suffix
-    if (practiceName && practiceName.trim()) {
+    if (practiceName && typeof practiceName === 'string' && practiceName.trim()) {
       const baseName = practiceName.trim()
       if (index === 0) {
         return `${baseName} - Main Office`
