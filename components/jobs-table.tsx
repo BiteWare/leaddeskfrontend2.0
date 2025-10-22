@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Search,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -44,6 +45,8 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [jobToKill, setJobToKill] = useState<string | null>(null);
   const [killingJob, setKillingJob] = useState<string | null>(null);
+  const [jobToRedo, setJobToRedo] = useState<string | null>(null);
+  const [redoingJob, setRedoingJob] = useState<string | null>(null);
 
   console.log("🔍 JobsTable received jobs:", {
     count: jobs.length,
@@ -259,6 +262,51 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
     }
   };
 
+  // Check if a job can be redone
+  const isRedoable = (status: string | null, job: EnrichmentJob): boolean => {
+    // Allow redo for failed, cancelled, expired jobs, or jobs that timed out
+    const redoableStates = ["failed", "cancelled", "expired"];
+    return (
+      (status ? redoableStates.includes(status) : false) || isJobStale(job)
+    );
+  };
+
+  // Handle redo job action
+  const handleRedoJob = async (correlationId: string) => {
+    setRedoingJob(correlationId);
+
+    try {
+      const response = await fetch("/api/redo-job", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ correlation_id: correlationId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to redo job");
+      }
+
+      const result = await response.json();
+
+      // Show success message
+      alert(
+        `Job resubmitted successfully! A new job has been created for ${result.data?.input_customer_name || "this practice"}.`,
+      );
+
+      // Refresh the page to show the new job
+      router.refresh();
+    } catch (error) {
+      console.error("Error redoing job:", error);
+      alert("Failed to resubmit job. Please try again.");
+    } finally {
+      setRedoingJob(null);
+      setJobToRedo(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Search Bar */}
@@ -338,24 +386,44 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
                     {formatDate(job.created_at)}
                   </TableCell>
                   <TableCell>
-                    {isKillable(job.overall_job_status) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setJobToKill(job.correlation_id);
-                        }}
-                        disabled={killingJob === job.correlation_id}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        {killingJob === job.correlation_id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isKillable(job.overall_job_status) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setJobToKill(job.correlation_id);
+                          }}
+                          disabled={killingJob === job.correlation_id}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          {killingJob === job.correlation_id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                      {isRedoable(job.overall_job_status, job) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setJobToRedo(job.correlation_id);
+                          }}
+                          disabled={redoingJob === job.correlation_id}
+                          className="text-blue-600 hover:text-blue-600 hover:bg-blue-50"
+                        >
+                          {redoingJob === job.correlation_id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -364,7 +432,7 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
         </Table>
       </div>
 
-      {/* Confirmation Dialog */}
+      {/* Kill Job Confirmation Dialog */}
       <AlertDialog
         open={!!jobToKill}
         onOpenChange={(open) => !open && setJobToKill(null)}
@@ -385,6 +453,32 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Yes, cancel job
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Redo Job Confirmation Dialog */}
+      <AlertDialog
+        open={!!jobToRedo}
+        onOpenChange={(open) => !open && setJobToRedo(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resubmit Job?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a new job with the same practice information as
+              the original job. The original job data will remain unchanged. Are
+              you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => jobToRedo && handleRedoJob(jobToRedo)}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Yes, resubmit job
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
