@@ -342,6 +342,14 @@ export function transformScraperOutputToLeadData(
 
   console.log("🔧 Final practice address:", practiceAddress);
 
+  // Determine practice phone with same pattern as address - prioritize first location
+  const practicePhone = normalizeValue(
+    locations[0]?.phone || scraperOutput.phone,
+  );
+  console.log("🔧 Practice phone from locations[0]:", locations[0]?.phone);
+  console.log("🔧 Practice phone from scraperOutput:", scraperOutput.phone);
+  console.log("🔧 Final practice phone:", practicePhone);
+
   return {
     practiceName: String(
       scraperOutput.practice_name ||
@@ -351,7 +359,7 @@ export function transformScraperOutputToLeadData(
     practiceAddress: practiceAddress,
     practiceWebsite:
       scraperOutput.resulting_url || scraperOutput.website || undefined,
-    practicePhone: normalizeValue(scraperOutput.phone),
+    practicePhone: practicePhone,
     practiceEmail: normalizeValue(scraperOutput.email),
     practiceSpecialty: String(
       scraperOutput.practice_specialties?.join(", ") || "General Practice",
