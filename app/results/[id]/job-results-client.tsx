@@ -1,24 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { JobsTable } from '@/components/jobs-table'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { User, Users, RefreshCw } from 'lucide-react'
-import type { EnrichmentJob } from '@/types/database.types'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { JobsTable } from "@/components/jobs-table";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { User, Users, RefreshCw } from "lucide-react";
+import type { EnrichmentJob } from "@/types/database.types";
 
 interface JobResultsClientProps {
-  userJobs: EnrichmentJob[]
-  allJobs: EnrichmentJob[]
-  correlationId?: string
+  userJobs: EnrichmentJob[];
+  allJobs: EnrichmentJob[];
+  correlationId?: string;
+  onRefresh?: () => void | Promise<void>;
 }
 
-export function JobResultsClient({ userJobs, allJobs, correlationId }: JobResultsClientProps) {
-  const [showAllJobs, setShowAllJobs] = useState(false)
-  const router = useRouter()
+export function JobResultsClient({
+  userJobs,
+  allJobs,
+  correlationId,
+  onRefresh,
+}: JobResultsClientProps) {
+  const [showAllJobs, setShowAllJobs] = useState(false);
+  const router = useRouter();
 
-  const displayedJobs = showAllJobs ? allJobs : userJobs
+  const displayedJobs = showAllJobs ? allJobs : userJobs;
+
+  const handleRefresh = async () => {
+    if (onRefresh) {
+      await onRefresh();
+    } else {
+      router.refresh();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -28,11 +42,7 @@ export function JobResultsClient({ userJobs, allJobs, correlationId }: JobResult
           <div className="flex items-center justify-between">
             <CardTitle>Jobs History</CardTitle>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.refresh()}
-              >
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -56,9 +66,13 @@ export function JobResultsClient({ userJobs, allJobs, correlationId }: JobResult
           </div>
         </CardHeader>
         <CardContent>
-          <JobsTable jobs={displayedJobs} showCreatedBy={showAllJobs} />
+          <JobsTable
+            jobs={displayedJobs}
+            showCreatedBy={showAllJobs}
+            onRefresh={onRefresh}
+          />
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

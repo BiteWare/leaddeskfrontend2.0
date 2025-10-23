@@ -39,9 +39,14 @@ import type { EnrichmentJob } from "@/types/database.types";
 interface JobsTableProps {
   jobs: EnrichmentJob[];
   showCreatedBy?: boolean;
+  onRefresh?: () => void | Promise<void>;
 }
 
-export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
+export function JobsTable({
+  jobs,
+  showCreatedBy = false,
+  onRefresh,
+}: JobsTableProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [jobToKill, setJobToKill] = useState<string | null>(null);
@@ -254,7 +259,11 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
       toast.success("Job deleted successfully");
 
       // Refresh the page to show updated status or removed job
-      router.refresh();
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error deleting job:", error);
       toast.error("Failed to delete job. Please try again.");
@@ -298,8 +307,14 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
         `Job resubmitted successfully! New job created for ${result.data?.input_customer_name || "this practice"}.`,
       );
 
-      // Refresh the page to show the new job
-      router.refresh();
+      // Wait a moment for the job to be created in the database, then refresh
+      setTimeout(async () => {
+        if (onRefresh) {
+          await onRefresh();
+        } else {
+          router.refresh();
+        }
+      }, 1000);
     } catch (error) {
       console.error("Error redoing job:", error);
       toast.error("Failed to resubmit job. Please try again.");
