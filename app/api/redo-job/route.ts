@@ -5,6 +5,7 @@ import type { Database } from "@/types/database.types";
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("🔍 Redo-job API called");
     const { correlation_id } = await request.json();
 
     if (!correlation_id) {
@@ -14,18 +15,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get authenticated user
+    // Try to get authenticated user, but don't require it
+    // The user ID will be included in webhook if available
     const supabase = createRouteHandlerClient(request);
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Please sign in to resubmit jobs" },
-        { status: 401 },
-      );
-    }
+    console.log("👤 User authenticated:", !!user, user?.id);
 
     // Get environment variables
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -54,14 +51,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare the webhook payload with the original job data
-    // The webhook will create a new job associated with the current user
-    const webhookPayload = {
+    // Include user ID if available so new job is associated with current user
+    const webhookPayload: {
+      input_customer_name: string | null;
+      input_street_address: string | null;
+      input_city: string | null;
+      input_state: string | null;
+      run_user_id?: string;
+    } = {
       input_customer_name: originalJob.input_customer_name,
       input_street_address: originalJob.input_street_address,
       input_city: originalJob.input_city,
       input_state: originalJob.input_state,
-      run_user_id: user.id, // Include user ID so new job is associated with current user
     };
+
+    // Only include run_user_id if user is authenticated
+    if (user) {
+      webhookPayload.run_user_id = user.id;
+      console.log("✅ Including user ID in webhook payload:", user.id);
+    } else {
+      console.log(
+        "⚠️ No user authenticated, job will be created without user association",
+      );
+    }
 
     // Call the n8n webhook to resubmit the job
     const webhookUrl = process.env.LEADDESK_WEBHOOK_URL!;
