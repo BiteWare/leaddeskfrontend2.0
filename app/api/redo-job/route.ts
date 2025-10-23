@@ -76,20 +76,46 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the n8n webhook to resubmit the job
-    const webhookUrl = process.env.LEADDESK_WEBHOOK_URL!;
+    const webhookUrl = process.env.LEADDESK_DISPATCHER_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+      console.error(
+        "❌ LEADDESK_DISPATCHER_WEBHOOK_URL environment variable not configured",
+      );
+      return NextResponse.json(
+        { error: "Webhook URL not configured. Please contact administrator." },
+        { status: 500 },
+      );
+    }
+
+    console.log("🌐 Calling webhook:", webhookUrl);
+    console.log("📦 Webhook payload:", JSON.stringify(webhookPayload, null, 2));
+
     const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(webhookPayload),
     });
 
+    console.log("📡 Webhook response status:", webhookResponse.status);
+
     if (!webhookResponse.ok) {
-      console.error("Error calling webhook:", webhookResponse.statusText);
+      const errorText = await webhookResponse
+        .text()
+        .catch(() => "Unknown error");
+      console.error("❌ Error calling webhook:", webhookResponse.statusText);
+      console.error("❌ Webhook error details:", errorText);
       return NextResponse.json(
-        { error: "Failed to resubmit job to workflow" },
+        {
+          error: "Failed to resubmit job to workflow",
+          details: errorText,
+          status: webhookResponse.status,
+        },
         { status: 500 },
       );
     }
+
+    console.log("✅ Webhook called successfully");
 
     return NextResponse.json({
       success: true,
@@ -97,9 +123,17 @@ export async function POST(request: NextRequest) {
       data: webhookPayload,
     });
   } catch (error) {
-    console.error("Error in redo-job API:", error);
+    console.error("❌ Error in redo-job API:", error);
+    console.error(
+      "❌ Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+        details: String(error),
+      },
       { status: 500 },
     );
   }
