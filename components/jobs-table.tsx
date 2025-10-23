@@ -23,6 +23,7 @@ import {
   Trash2,
   RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -249,13 +250,14 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
 
       const result = await response.json();
 
+      // Show success toast
+      toast.success("Job deleted successfully");
+
       // Refresh the page to show updated status or removed job
       router.refresh();
     } catch (error) {
       console.error("Error deleting job:", error);
-      alert(
-        "Failed to delete job. Please try again or contact support if the issue persists.",
-      );
+      toast.error("Failed to delete job. Please try again.");
     } finally {
       setKillingJob(null);
       setJobToKill(null);
@@ -291,16 +293,16 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
 
       const result = await response.json();
 
-      // Show success message
-      alert(
-        `Job resubmitted successfully! A new job has been created for ${result.data?.input_customer_name || "this practice"}.`,
+      // Show success toast
+      toast.success(
+        `Job resubmitted successfully! New job created for ${result.data?.input_customer_name || "this practice"}.`,
       );
 
       // Refresh the page to show the new job
       router.refresh();
     } catch (error) {
       console.error("Error redoing job:", error);
-      alert("Failed to resubmit job. Please try again.");
+      toast.error("Failed to resubmit job. Please try again.");
     } finally {
       setRedoingJob(null);
       setJobToRedo(null);
