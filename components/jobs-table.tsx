@@ -82,15 +82,6 @@ export function JobsTable({
     });
   }, [jobs, searchQuery]);
 
-  // Auto-refresh every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [router]);
-
   // Helper to check if a job is stale (stuck in processing for too long)
   const isJobStale = (job: EnrichmentJob): boolean => {
     const processingStates = [

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebarCustom } from "@/components/app-sidebar-custom";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Loader2 } from "lucide-react";
 import type { EnrichmentJob } from "@/types/database.types";
 import { JobResultsClient } from "./[id]/job-results-client";
 import { supabase } from "@/utils/supabase-client";
@@ -18,6 +18,7 @@ export default function ResultsListPage() {
   const [allJobs, setAllJobs] = useState<EnrichmentJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
 
   const fetchJobs = async () => {
     try {
@@ -111,6 +112,45 @@ export default function ResultsListPage() {
     fetchJobs();
   }, []);
 
+  // Smart polling: only poll when there are active jobs
+  useEffect(() => {
+    // Define active job states that require polling
+    const activeStates = [
+      "pending_url_search",
+      "url_worker_called",
+      "scraper_worker_called",
+      "queued",
+      "in_progress",
+    ];
+
+    // Check if any jobs are in active/processing states
+    const hasActiveJobs = [...userJobs, ...allJobs].some(
+      (job) =>
+        job.overall_job_status && activeStates.includes(job.overall_job_status),
+    );
+
+    if (hasActiveJobs && !loading) {
+      console.log("🔄 Active jobs detected, starting smart polling");
+      setIsPolling(true);
+
+      const pollInterval = setInterval(() => {
+        console.log("⏱️ Auto-polling for job updates...");
+        fetchJobs();
+      }, 10000); // Poll every 10 seconds
+
+      return () => {
+        console.log("⏹️ Stopping smart polling");
+        clearInterval(pollInterval);
+        setIsPolling(false);
+      };
+    } else {
+      setIsPolling(false);
+      if (!hasActiveJobs && !loading) {
+        console.log("✅ No active jobs, polling stopped");
+      }
+    }
+  }, [userJobs, allJobs, loading]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -131,7 +171,15 @@ export default function ResultsListPage() {
           <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b bg-white">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1">
-              <h1 className="text-lg font-semibold">All Results</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-lg font-semibold">All Results</h1>
+                {isPolling && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Auto-refreshing...
+                  </span>
+                )}
+              </div>
             </div>
             <Button
               variant="outline"

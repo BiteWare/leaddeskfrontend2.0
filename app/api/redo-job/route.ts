@@ -117,6 +117,21 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ Webhook called successfully");
 
+    // Delete the original job to avoid duplicates in the table
+    console.log("🗑️ Deleting original job:", correlation_id);
+    const { error: deleteError } = await supabaseAdmin
+      .from("enrichment_jobs")
+      .delete()
+      .eq("correlation_id", correlation_id);
+
+    if (deleteError) {
+      console.error("⚠️ Failed to delete original job:", deleteError);
+      // Don't fail the whole request if we can't delete the original
+      // The new job was already created successfully
+    } else {
+      console.log("✅ Original job deleted");
+    }
+
     return NextResponse.json({
       success: true,
       message: "Job resubmitted successfully",
