@@ -221,19 +221,15 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
     }
   };
 
-  // Check if a job can be killed
+  // Check if a job can be killed/deleted
+  // All jobs can now be deleted regardless of state
   const isKillable = (status: string | null): boolean => {
-    const killableStates = [
-      "pending_url_search",
-      "url_worker_called",
-      "scraper_worker_called",
-      "queued",
-      "in_progress",
-    ];
-    return status ? killableStates.includes(status) : false;
+    // Don't allow deleting jobs that are already cancelled or expired
+    const nonKillableStates = ["cancelled", "expired"];
+    return status ? !nonKillableStates.includes(status) : true;
   };
 
-  // Handle kill job action
+  // Handle kill/delete job action
   const handleKillJob = async (correlationId: string) => {
     setKillingJob(correlationId);
 
@@ -248,14 +244,18 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to kill job");
+        throw new Error(errorData.error || "Failed to delete job");
       }
 
-      // Refresh the page to show updated status
+      const result = await response.json();
+
+      // Refresh the page to show updated status or removed job
       router.refresh();
     } catch (error) {
-      console.error("Error killing job:", error);
-      alert("Failed to cancel job. Please try again.");
+      console.error("Error deleting job:", error);
+      alert(
+        "Failed to delete job. Please try again or contact support if the issue persists.",
+      );
     } finally {
       setKillingJob(null);
       setJobToKill(null);
@@ -432,18 +432,46 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
         </Table>
       </div>
 
-      {/* Kill Job Confirmation Dialog */}
+      {/* Kill/Delete Job Confirmation Dialog */}
       <AlertDialog
         open={!!jobToKill}
         onOpenChange={(open) => !open && setJobToKill(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Job?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {jobToKill &&
+              jobs.find((j) => j.correlation_id === jobToKill)
+                ?.overall_job_status &&
+              [
+                "pending_url_search",
+                "url_worker_called",
+                "scraper_worker_called",
+                "queued",
+                "in_progress",
+              ].includes(
+                jobs.find((j) => j.correlation_id === jobToKill)!
+                  .overall_job_status!,
+              )
+                ? "Cancel Job?"
+                : "Delete Job?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this job? This action cannot be
-              undone. The job will be marked as cancelled and will stop
-              processing.
+              {jobToKill &&
+              jobs.find((j) => j.correlation_id === jobToKill)
+                ?.overall_job_status &&
+              [
+                "pending_url_search",
+                "url_worker_called",
+                "scraper_worker_called",
+                "queued",
+                "in_progress",
+              ].includes(
+                jobs.find((j) => j.correlation_id === jobToKill)!
+                  .overall_job_status!,
+              )
+                ? "Are you sure you want to cancel this job? This action cannot be undone. The job will be marked as cancelled and will stop processing."
+                : "Are you sure you want to delete this job? This action cannot be undone. All job data will be permanently removed from the system."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -452,7 +480,21 @@ export function JobsTable({ jobs, showCreatedBy = false }: JobsTableProps) {
               onClick={() => jobToKill && handleKillJob(jobToKill)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Yes, cancel job
+              {jobToKill &&
+              jobs.find((j) => j.correlation_id === jobToKill)
+                ?.overall_job_status &&
+              [
+                "pending_url_search",
+                "url_worker_called",
+                "scraper_worker_called",
+                "queued",
+                "in_progress",
+              ].includes(
+                jobs.find((j) => j.correlation_id === jobToKill)!
+                  .overall_job_status!,
+              )
+                ? "Yes, cancel job"
+                : "Yes, delete job"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

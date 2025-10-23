@@ -22,31 +22,72 @@ export async function POST(request: NextRequest) {
     // Create Supabase client
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
-    // Update the job status to 'cancelled'
-    const { data, error } = await supabase
+    // First, check if the job exists and get its current status
+    const { data: existingJob, error: fetchError } = await supabase
       .from("enrichment_jobs")
-      .update({ overall_job_status: "cancelled" })
+      .select("overall_job_status")
       .eq("correlation_id", correlation_id)
-      .select()
       .single();
 
-    if (error) {
-      console.error("Error killing job:", error);
-      return NextResponse.json(
-        { error: "Failed to kill job", details: error.message },
-        { status: 500 },
-      );
-    }
-
-    if (!data) {
+    if (fetchError || !existingJob) {
+      console.error("Error fetching job:", fetchError);
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Job cancelled successfully",
-      job: data,
-    });
+    const activeStates = [
+      "pending_url_search",
+      "url_worker_called",
+      "scraper_worker_called",
+      "queued",
+      "in_progress",
+    ];
+
+    // If job is in an active state, cancel it. Otherwise, delete it.
+    if (
+      existingJob.overall_job_status &&
+      activeStates.includes(existingJob.overall_job_status)
+    ) {
+      // Cancel active job by updating status
+      const { data, error } = await supabase
+        .from("enrichment_jobs")
+        .update({ overall_job_status: "cancelled" })
+        .eq("correlation_id", correlation_id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error cancelling job:", error);
+        return NextResponse.json(
+          { error: "Failed to cancel job", details: error.message },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Job cancelled successfully",
+        job: data,
+      });
+    } else {
+      // Delete completed/failed job
+      const { error } = await supabase
+        .from("enrichment_jobs")
+        .delete()
+        .eq("correlation_id", correlation_id);
+
+      if (error) {
+        console.error("Error deleting job:", error);
+        return NextResponse.json(
+          { error: "Failed to delete job", details: error.message },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Job deleted successfully",
+      });
+    }
   } catch (error) {
     console.error("Error in kill-job API:", error);
     return NextResponse.json(
