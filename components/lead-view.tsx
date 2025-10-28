@@ -473,11 +473,21 @@ export default function LeadView({ leadData }: LeadViewProps) {
                           </CardHeader>
                           <CardContent>
                             <div className="flex flex-wrap gap-2">
-                              {specialties.map((specialty, index) => (
-                                <Badge key={index} variant="secondary">
-                                  {specialty}
+                              {specialties
+                                .slice(0, 5)
+                                .map((specialty, index) => (
+                                  <Badge key={index} variant="secondary">
+                                    {specialty}
+                                  </Badge>
+                                ))}
+                              {specialties.length > 5 && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-muted-foreground"
+                                >
+                                  +{specialties.length - 5} more
                                 </Badge>
-                              ))}
+                              )}
                             </div>
                           </CardContent>
                         </Card>
