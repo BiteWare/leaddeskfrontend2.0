@@ -8,6 +8,7 @@ import {
   parseScraperWorkerResults,
   extractScraperMetadata,
 } from "./scraper-parser";
+import { classifyCohort } from "./cohort-classifier";
 
 export interface JobInputData {
   input_customer_name?: string | null;
@@ -45,6 +46,18 @@ export function transformScraperOutputToLeadData(
   console.log("🔧 Transformer - Job input data:", jobInputData);
   console.log("🔧 Available fields:", Object.keys(scraperOutput || {}));
   console.log("🔧 Raw locations from scraper:", scraperOutput?.locations);
+
+  // Classify cohort based on practice information
+  const cohort = scraperOutput
+    ? classifyCohort({
+        practiceName: scraperOutput.practice_name,
+        resultingUrl: scraperOutput.resulting_url,
+        specialties: scraperOutput.practice_specialties,
+        groupName: scraperOutput.group_name,
+      })
+    : "Uncategorized";
+
+  console.log("🏷️ Transformer - Assigned cohort:", cohort);
 
   // Build fallback address from job input
   const fallbackAddress = jobInputData
@@ -374,6 +387,8 @@ export function transformScraperOutputToLeadData(
     personInCharge: scraperOutput.person_in_charge,
     worksMultipleLocations: scraperOutput.works_multiple_locations,
     scrapeNotes: scraperOutput.scrape_notes,
+    // Add cohort classification
+    cohort: cohort,
     // Add raw JSON data
     rawJson: scraperWorkerResultsJson,
   };
