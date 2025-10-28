@@ -7,11 +7,11 @@
  * Classification uses first-match-wins logic in priority order:
  * 1. Dealers
  * 2. Government
- * 3. Education
- * 4. Clinic
+ * 3. Education (.edu domains, university/college keywords)
+ * 4. Clinic (foundation/community/CHC keywords, dental clinic/center)
  * 5. Pediatric
- * 6. DSO (placeholder)
- * 7. Uncategorized (fallback)
+ * 6. DSO (multi-location + corporate patterns)
+ * 7. Uncategorized (only when insufficient data)
  */
 
 export type CohortType =
@@ -28,6 +28,7 @@ export interface CohortClassificationInput {
   resultingUrl?: string | null;
   specialties?: string[] | null;
   groupName?: string | null;
+  worksMultipleLocations?: boolean | null;
 }
 
 /**
@@ -115,23 +116,30 @@ function isGeneralDentistry(specialties: string[] | null | undefined): boolean {
  * Uses first-match-wins logic:
  * - Dealers: Group name contains "Dealers"
  * - Government: .gov domain
- * - Education: Group name includes "US Schools"
- * - Clinic: Name includes foundation/community/CHC OR specialty = "Public Health"
+ * - Education: .edu domain OR university/college keywords OR group name "US Schools"
+ * - Clinic: Name includes foundation/community/CHC/clinic/center keywords OR specialty = "Public Health"
  * - Pediatric: Name includes pediatric keywords OR specialty = "Pediatric Dentistry" (excluding general dentistry)
- * - DSO: Placeholder for future exclusion list
- * - Uncategorized: Default fallback
+ * - DSO: Multi-location practices with corporate patterns (dental group/partners/associates)
+ * - Uncategorized: Only when insufficient data to classify
  *
  * @param input - Practice information for classification
  * @returns Cohort type
  */
 export function classifyCohort(input: CohortClassificationInput): CohortType {
-  const { practiceName, resultingUrl, specialties, groupName } = input;
+  const {
+    practiceName,
+    resultingUrl,
+    specialties,
+    groupName,
+    worksMultipleLocations,
+  } = input;
 
   console.log("🏷️ Classifying cohort for:", {
     practiceName,
     resultingUrl,
     specialties,
     groupName,
+    worksMultipleLocations,
   });
 
   // Rule 1: Dealers - group name contains "Dealers"
@@ -147,20 +155,40 @@ export function classifyCohort(input: CohortClassificationInput): CohortType {
     return "Government";
   }
 
-  // Rule 3: Education - group name includes "US Schools"
-  if (containsKeyword(groupName, ["US Schools"])) {
-    console.log("✅ Matched: Education (US Schools)");
+  // Rule 3: Education - .edu domain OR university/college keywords OR group name "US Schools"
+  const educationKeywords = [
+    "university",
+    "college",
+    "school of dentistry",
+    "dental school",
+  ];
+  if (
+    domain.endsWith(".edu") ||
+    containsKeyword(practiceName, educationKeywords) ||
+    containsKeyword(groupName, ["US Schools"])
+  ) {
+    console.log(
+      "✅ Matched: Education (.edu domain, educational keywords, or US Schools)",
+    );
     return "Education";
   }
 
-  // Rule 4: Clinic - name includes foundation/community/CHC OR specialty = "Public Health"
-  const clinicKeywords = ["foundation", "community", "chc"];
+  // Rule 4: Clinic - name includes foundation/community/CHC/clinic/center OR specialty = "Public Health"
+  const clinicKeywords = [
+    "foundation",
+    "community",
+    "chc",
+    "dental clinic",
+    "dental center",
+    "oral health center",
+    "health center",
+  ];
   if (
     containsKeyword(practiceName, clinicKeywords) ||
     hasSpecialty(specialties, ["Public Health"])
   ) {
     console.log(
-      "✅ Matched: Clinic (foundation/community/CHC or Public Health)",
+      "✅ Matched: Clinic (foundation/community/CHC/clinic/center or Public Health)",
     );
     return "Clinic";
   }
@@ -189,12 +217,58 @@ export function classifyCohort(input: CohortClassificationInput): CohortType {
     return "Pediatric";
   }
 
-  // Rule 6: DSO - placeholder for future exclusion list
-  // TODO: Implement DSO exclusion list integration
-  // For now, this will never match
+  // Rule 6: DSO - Multi-location practices with corporate patterns
+  const dsoKeywords = [
+    "dental group",
+    "dental partners",
+    "dental associates",
+    "family dental",
+    "smile brands",
+    "aspen dental",
+    "bright now",
+    "dental care alliance",
+    "heartland dental",
+    "pacific dental",
+    "affordable care",
+    "smile doctors",
+    "dental care group",
+    "dental organization",
+  ];
 
-  // Rule 7: Uncategorized - default fallback
-  console.log("⚪ Matched: Uncategorized (no rules matched)");
+  // DSO detection: corporate keywords + multi-location OR just strong DSO brand names
+  const hasDSOKeywords = containsKeyword(practiceName, dsoKeywords);
+  const isMultiLocation = worksMultipleLocations === true;
+
+  // Strong DSO brand names that indicate DSO even without multi-location confirmation
+  const strongDSOBrands = [
+    "aspen dental",
+    "bright now",
+    "heartland dental",
+    "pacific dental",
+    "smile brands",
+  ];
+  const hasStrongDSOBrand = containsKeyword(practiceName, strongDSOBrands);
+
+  if (hasDSOKeywords && (isMultiLocation || hasStrongDSOBrand)) {
+    console.log(
+      "✅ Matched: DSO (corporate keywords + multi-location or strong brand)",
+    );
+    return "DSO";
+  }
+
+  // Rule 7: Uncategorized - Only when we have insufficient data to classify
+  // A practice should only be uncategorized if we lack basic information
+  const hasMinimalData =
+    practiceName || resultingUrl || (specialties && specialties.length > 0);
+
+  if (!hasMinimalData) {
+    console.log("⚪ Matched: Uncategorized (insufficient data to classify)");
+    return "Uncategorized";
+  }
+
+  // If we have data but didn't match any cohort, it's likely a private practice
+  // Keep as Uncategorized for now (PM approval needed for "Private Practice" cohort)
+  console.log("⚪ Matched: Uncategorized (no cohort rules matched)");
   return "Uncategorized";
 }
 
@@ -207,7 +281,13 @@ export function classifyCohort(input: CohortClassificationInput): CohortType {
  */
 export function getCohortReason(input: CohortClassificationInput): string {
   const cohort = classifyCohort(input);
-  const { practiceName, resultingUrl, specialties, groupName } = input;
+  const {
+    practiceName,
+    resultingUrl,
+    specialties,
+    groupName,
+    worksMultipleLocations,
+  } = input;
   const domain = extractDomain(resultingUrl);
 
   switch (cohort) {
@@ -216,21 +296,35 @@ export function getCohortReason(input: CohortClassificationInput): string {
     case "Government":
       return `Domain "${domain}" is a .gov domain`;
     case "Education":
-      return `Group name "${groupName}" includes "US Schools"`;
+      if (domain.endsWith(".edu")) {
+        return `Domain "${domain}" is a .edu domain`;
+      }
+      if (groupName?.toLowerCase().includes("us schools")) {
+        return `Group name "${groupName}" includes "US Schools"`;
+      }
+      return `Practice name "${practiceName}" includes educational keywords`;
     case "Clinic":
       if (hasSpecialty(specialties, ["Public Health"])) {
         return `Specialty includes "Public Health"`;
       }
-      return `Practice name "${practiceName}" includes foundation/community/CHC keywords`;
+      return `Practice name "${practiceName}" includes clinic/foundation/community keywords`;
     case "Pediatric":
       if (hasSpecialty(specialties, ["Pediatric Dentistry", "Pediatrics"])) {
         return `Specialty includes "Pediatric Dentistry"`;
       }
       return `Practice name "${practiceName}" includes pediatric keywords`;
     case "DSO":
-      return "Matched DSO exclusion list (placeholder)";
+      if (worksMultipleLocations) {
+        return `Multi-location practice with corporate naming patterns`;
+      }
+      return `Recognized DSO brand name`;
     case "Uncategorized":
     default:
-      return "No cohort rules matched";
+      const hasData =
+        practiceName || resultingUrl || (specialties && specialties.length > 0);
+      if (!hasData) {
+        return "Insufficient data to classify";
+      }
+      return "No cohort rules matched - likely private practice";
   }
 }

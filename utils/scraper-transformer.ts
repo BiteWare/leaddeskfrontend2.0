@@ -54,6 +54,7 @@ export function transformScraperOutputToLeadData(
         resultingUrl: scraperOutput.resulting_url,
         specialties: scraperOutput.practice_specialties,
         groupName: scraperOutput.group_name,
+        worksMultipleLocations: scraperOutput.works_multiple_locations,
       })
     : "Uncategorized";
 
