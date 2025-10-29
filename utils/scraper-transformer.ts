@@ -390,6 +390,8 @@ export function transformScraperOutputToLeadData(
     scrapeNotes: scraperOutput.scrape_notes,
     // Add cohort classification
     cohort: cohort,
+    // Add exclusion flag - automatically exclude DSO practices
+    excluded: cohort === "DSO",
     // Add raw JSON data
     rawJson: scraperWorkerResultsJson,
   };

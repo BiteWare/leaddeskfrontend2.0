@@ -10,9 +10,11 @@
  * 3. Education (.edu domains, university/college keywords)
  * 4. Clinic (foundation/community/CHC keywords, dental clinic/center)
  * 5. Pediatric
- * 6. DSO (multi-location + corporate patterns)
+ * 6. DSO (centralized exclusion list + multi-location + corporate patterns)
  * 7. Uncategorized (only when insufficient data)
  */
+
+import { isDSO } from "./dso-check";
 
 export type CohortType =
   | "Dealers"
@@ -217,7 +219,14 @@ export function classifyCohort(input: CohortClassificationInput): CohortType {
     return "Pediatric";
   }
 
-  // Rule 6: DSO - Multi-location practices with corporate patterns
+  // Rule 6: DSO - Centralized exclusion list + Multi-location practices with corporate patterns
+  // First, check against the centralized DSO exclusion list
+  if (isDSO(practiceName || "", domain)) {
+    console.log("✅ Matched: DSO (centralized exclusion list)");
+    return "DSO";
+  }
+
+  // Fallback: Check for corporate patterns + multi-location (existing logic)
   const dsoKeywords = [
     "dental group",
     "dental partners",

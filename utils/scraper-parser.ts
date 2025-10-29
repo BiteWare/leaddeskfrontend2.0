@@ -37,6 +37,7 @@ export interface ScraperWorkerOutput {
   website?: string;
   cohort?: string;
   group_name?: string;
+  excluded?: boolean;
 }
 
 /**

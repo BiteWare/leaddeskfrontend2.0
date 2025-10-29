@@ -84,6 +84,7 @@ export interface LeadData {
   scrapeNotes?: string;
   // Cohort classification
   cohort?: string;
+  excluded?: boolean;
   // Raw JSON data
   rawJson?: any;
 }
