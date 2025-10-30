@@ -85,6 +85,8 @@ export interface LeadData {
   // Cohort classification
   cohort?: string;
   excluded?: boolean;
+  // Original user input
+  originalInput?: string;
   // Raw JSON data
   rawJson?: any;
 }
@@ -125,6 +127,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
   const [stateFilter, setStateFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isInputExpanded, setIsInputExpanded] = useState(false);
 
   const {
     practiceName,
@@ -143,6 +146,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
     worksMultipleLocations,
     scrapeNotes,
     cohort,
+    originalInput,
     rawJson,
   } = leadData;
 
@@ -926,6 +930,43 @@ export default function LeadView({ leadData }: LeadViewProps) {
 
                     {/* Raw Data Tab */}
                     <TabsContent value="raw-data" className="space-y-4">
+                      {/* Original Input Section */}
+                      {originalInput && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <Search className="h-4 w-4" />
+                              Original Input
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-start gap-2">
+                              <Badge
+                                variant="secondary"
+                                className="text-sm py-1.5 px-3 max-w-full"
+                              >
+                                {isInputExpanded || originalInput.length <= 80
+                                  ? originalInput
+                                  : `${originalInput.substring(0, 80)}...`}
+                              </Badge>
+                              {originalInput.length > 80 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    setIsInputExpanded(!isInputExpanded)
+                                  }
+                                  className="text-xs shrink-0"
+                                >
+                                  {isInputExpanded ? "Show less" : "Show more"}
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Raw JSON Section */}
                       <Card>
                         <CardHeader>
                           <div className="flex items-center justify-between">

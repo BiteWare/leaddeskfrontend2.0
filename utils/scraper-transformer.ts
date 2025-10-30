@@ -364,6 +364,20 @@ export function transformScraperOutputToLeadData(
   console.log("🔧 Practice phone from scraperOutput:", scraperOutput.phone);
   console.log("🔧 Final practice phone:", practicePhone);
 
+  // Construct original input string from job input data
+  const originalInput = jobInputData
+    ? [
+        jobInputData.input_customer_name,
+        jobInputData.input_street_address,
+        jobInputData.input_city,
+        jobInputData.input_state,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : undefined;
+
+  console.log("🔧 Constructed original input:", originalInput);
+
   return {
     practiceName: String(
       scraperOutput.practice_name ||
@@ -392,6 +406,8 @@ export function transformScraperOutputToLeadData(
     cohort: cohort,
     // Add exclusion flag - automatically exclude DSO practices
     excluded: cohort === "DSO",
+    // Add original user input
+    originalInput: originalInput,
     // Add raw JSON data
     rawJson: scraperWorkerResultsJson,
   };
