@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "repository": {
+    "name": "leaddeskfrontend2.0",
+    "branch": "main",
+    "path": "C:\\Users\\johns\\OneDrive\\Desktop\\leaddesk10.25\\leaddeskfrontend2.0",
+    "remote": "https://github.com/BiteWare/leaddeskfrontend2.0.git"
+  },
+  "analysis": {
+    "summary": {
+      "filesAnalyzed": 109,
+      "suggestions": 0,
+      "categories": {},
+      "duration": 159
+    },
+    "suggestions": [],
+    "metadata": {
+      "timestamp": "2025-11-03T22:25:21.495Z",
+      "model": "llama2",
+      "provider": "ollama",
+      "mode": "full"
+    }
+  },
+  "generatedAt": "2025-11-03T22:25:21.643Z"
+}

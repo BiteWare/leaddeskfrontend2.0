@@ -263,8 +263,6 @@ export function transformScraperOutputToLeadData(
       role: scraperOutput.person_in_charge.role,
       credentials: scraperOutput.person_in_charge.credentials,
       location: "Main Office",
-      phone: undefined,
-      email: undefined,
     });
   }
 
@@ -280,8 +278,6 @@ export function transformScraperOutputToLeadData(
             role: member.role,
             credentials: member.credentials,
             location: undefined,
-            phone: undefined,
-            email: undefined,
           });
         }
       }
@@ -302,8 +298,6 @@ export function transformScraperOutputToLeadData(
                 role: member.role,
                 credentials: member.credentials,
                 location: location.name,
-                phone: undefined,
-                email: undefined,
               });
             } else {
               // Update location if staff already exists but didn't have a location
@@ -323,8 +317,6 @@ export function transformScraperOutputToLeadData(
     name: String(member.name || ""),
     role: String(member.role || ""),
     location: member.location ? String(member.location) : undefined,
-    phone: member.phone ? String(member.phone) : undefined,
-    email: member.email ? String(member.email) : undefined,
     credentials: member.credentials ? String(member.credentials) : undefined,
   }));
 

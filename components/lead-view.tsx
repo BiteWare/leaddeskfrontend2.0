@@ -45,8 +45,6 @@ export interface StaffMember {
   name: string;
   role: string;
   location?: string;
-  phone?: string;
-  email?: string;
   credentials?: string;
 }
 
@@ -691,7 +689,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
                       </div>
                     </TabsContent>
 
-                    {/* Staff Tab */}
+                    {/* Staff Directory Tab */}
                     <TabsContent value="staff" className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold">
@@ -703,23 +701,11 @@ export default function LeadView({ leadData }: LeadViewProps) {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="min-w-[200px]">
+                                <TableHead className="min-w-[250px]">
                                   Name
                                 </TableHead>
-                                <TableHead className="min-w-[150px]">
+                                <TableHead className="min-w-[200px]">
                                   Role
-                                </TableHead>
-                                <TableHead className="min-w-[120px]">
-                                  Credentials
-                                </TableHead>
-                                <TableHead className="min-w-[150px]">
-                                  Location
-                                </TableHead>
-                                <TableHead className="min-w-[140px]">
-                                  Phone
-                                </TableHead>
-                                <TableHead className="min-w-[250px]">
-                                  Email
                                 </TableHead>
                               </TableRow>
                             </TableHeader>
@@ -739,44 +725,6 @@ export default function LeadView({ leadData }: LeadViewProps) {
                                     >
                                       {member.role}
                                     </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-sm">
-                                    {member.credentials ? (
-                                      <span className="text-xs text-muted-foreground">
-                                        {member.credentials}
-                                      </span>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground/50">
-                                        N/A
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-sm">
-                                    {member.location || "N/A"}
-                                  </TableCell>
-                                  <TableCell className="text-sm">
-                                    {member.phone ? (
-                                      <a
-                                        href={`tel:${member.phone}`}
-                                        className="text-primary hover:text-primary/80"
-                                      >
-                                        {member.phone}
-                                      </a>
-                                    ) : (
-                                      "N/A"
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-sm">
-                                    {member.email ? (
-                                      <a
-                                        href={`mailto:${member.email}`}
-                                        className="text-primary hover:text-primary/80 break-all"
-                                      >
-                                        {member.email}
-                                      </a>
-                                    ) : (
-                                      "N/A"
-                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}
