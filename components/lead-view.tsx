@@ -122,6 +122,57 @@ function getCohortColor(cohort: string | undefined): string {
   }
 }
 
+/**
+ * Determines practice type based on specialties
+ * Returns "General Practice" if general dentistry keywords found, otherwise "Specialty Practice"
+ */
+function getPracticeType(specialties: string[]): string {
+  if (!specialties || specialties.length === 0) return "Not Available";
+
+  const generalKeywords = [
+    "general dentistry",
+    "general",
+    "family dentistry",
+    "comprehensive care",
+    "preventive care",
+  ];
+
+  const hasGeneral = specialties.some((specialty) =>
+    generalKeywords.some((keyword) =>
+      specialty.toLowerCase().includes(keyword),
+    ),
+  );
+
+  return hasGeneral ? "General Practice" : "Specialty Practice";
+}
+
+/**
+ * Extracts primary specialty from the specialties list
+ * Returns the first specialty that isn't "general dentistry" or similar
+ */
+function getPrimarySpecialty(specialties: string[]): string {
+  if (!specialties || specialties.length === 0) return "Not Available";
+
+  const generalKeywords = [
+    "general dentistry",
+    "general",
+    "family dentistry",
+    "comprehensive",
+    "preventive",
+  ];
+
+  // Find first non-general specialty
+  const primarySpecialty = specialties.find(
+    (specialty) =>
+      !generalKeywords.some((keyword) =>
+        specialty.toLowerCase().includes(keyword),
+      ),
+  );
+
+  // If no specialty found or all are general, return first one
+  return primarySpecialty || specialties[0] || "Not Available";
+}
+
 export default function LeadView({ leadData }: LeadViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [stateFilter, setStateFilter] = useState("all");
@@ -247,16 +298,20 @@ export default function LeadView({ leadData }: LeadViewProps) {
 
         {/* Flexible Height Container with Tabs */}
         <div className="flex-1 flex flex-col min-h-0">
-          <Tabs defaultValue="overview" className="flex-1 flex flex-col">
+          <Tabs defaultValue="practice-info" className="flex-1 flex flex-col">
             {/* Tab Navigation - Fixed */}
             <div className="px-6 pt-4">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger
-                  value="overview"
+                  value="practice-info"
                   className="flex items-center gap-2"
                 >
                   <Building className="h-4 w-4" />
-                  Overview
+                  Practice Info
+                </TabsTrigger>
+                <TabsTrigger value="staff" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Staff
                 </TabsTrigger>
                 <TabsTrigger
                   value="locations"
@@ -264,17 +319,6 @@ export default function LeadView({ leadData }: LeadViewProps) {
                 >
                   <MapPin className="h-4 w-4" />
                   Locations
-                </TabsTrigger>
-                <TabsTrigger value="staff" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Staff
-                </TabsTrigger>
-                <TabsTrigger
-                  value="contact"
-                  className="flex items-center gap-2"
-                >
-                  <Phone className="h-4 w-4" />
-                  Contact
                 </TabsTrigger>
                 <TabsTrigger
                   value="analytics"
@@ -343,247 +387,240 @@ export default function LeadView({ leadData }: LeadViewProps) {
               <div className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
                   <div className="p-6">
-                    {/* Overview Tab */}
-                    <TabsContent value="overview" className="space-y-6">
-                      {/* Summary Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-blue-100 text-sm">
-                                  Locations
-                                </p>
-                                <p className="text-2xl font-bold">
-                                  {locations.length}
-                                </p>
-                              </div>
-                              <Building className="h-8 w-8 text-blue-200" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-green-100 text-sm">
-                                  Dentists
-                                </p>
-                                <p className="text-2xl font-bold">
-                                  {numberOfDentists}
-                                </p>
-                              </div>
-                              <Stethoscope className="h-8 w-8 text-green-200" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-purple-100 text-sm">
-                                  Hygienists
-                                </p>
-                                <p className="text-2xl font-bold">
-                                  {numberOfHygienists}
-                                </p>
-                              </div>
-                              <Users className="h-8 w-8 text-purple-200" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-orange-100 text-sm">
-                                  Specialties
-                                </p>
-                                <p className="text-2xl font-bold">
-                                  {specialties.length}
-                                </p>
-                              </div>
-                              <BookOpenCheck className="h-8 w-8 text-orange-200" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      {/* Practice Information */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <MapPin className="h-5 w-5" />
-                              Practice Information
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div>
-                              <span className="font-medium text-muted-foreground">
-                                Address:
-                              </span>
-                              <p className="text-foreground mt-1">
-                                {practiceAddress}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-muted-foreground">
-                                Website:
-                              </span>
-                              <p className="mt-1">
-                                {practiceWebsite ? (
-                                  <a
-                                    href={practiceWebsite}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:text-primary/80 underline"
-                                  >
-                                    <Globe className="h-4 w-4 inline mr-1" />
-                                    {practiceWebsite}
-                                  </a>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    Not available
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-muted-foreground">
-                                Phone:
-                              </span>
-                              <p className="mt-1">
-                                {practicePhone ? (
-                                  <span className="flex items-center gap-1 text-foreground">
-                                    <Phone className="h-4 w-4" />
-                                    {practicePhone}
-                                  </span>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    Not available
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <BookOpenCheck className="h-5 w-5" />
-                              Specialties
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex flex-wrap gap-2">
-                              {specialties
-                                .slice(0, 5)
-                                .map((specialty, index) => (
-                                  <Badge key={index} variant="secondary">
-                                    {specialty}
-                                  </Badge>
-                                ))}
-                              {specialties.length > 5 && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-muted-foreground"
-                                >
-                                  +{specialties.length - 5} more
-                                </Badge>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      {/* Scraper Information - Only show if scraper data is available */}
-                      {(resultingUrl ||
-                        personInCharge ||
-                        worksMultipleLocations !== undefined ||
-                        scrapeNotes) && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Practice Info Tab */}
+                    <TabsContent value="practice-info" className="space-y-6">
+                      {/* 2-Column Grid Layout */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Left Column */}
+                        <div className="space-y-6">
+                          {/* Practice Information Card */}
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
-                                <Globe className="h-5 w-5" />
-                                Source Information
+                                <Building className="h-5 w-5" />
+                                Practice Information
                               </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                              {resultingUrl && (
-                                <div>
-                                  <span className="font-medium text-muted-foreground">
-                                    Source URL:
-                                  </span>
-                                  <p className="mt-1">
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Practice Name:
+                                </span>
+                                <p className="text-foreground mt-1 font-semibold">
+                                  {practiceName}
+                                </p>
+                              </div>
+                              <Separator />
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Address:
+                                </span>
+                                <p className="text-foreground mt-1">
+                                  {practiceAddress}
+                                </p>
+                              </div>
+                              <Separator />
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Phone:
+                                </span>
+                                <p className="mt-1">
+                                  {practicePhone ? (
                                     <a
-                                      href={resultingUrl}
+                                      href={`tel:${practicePhone}`}
+                                      className="text-primary hover:text-primary/80 flex items-center gap-1"
+                                    >
+                                      <Phone className="h-4 w-4" />
+                                      {practicePhone}
+                                    </a>
+                                  ) : (
+                                    <span className="text-muted-foreground">
+                                      Not available
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              <Separator />
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Practice URL:
+                                </span>
+                                <p className="mt-1">
+                                  {practiceWebsite ? (
+                                    <a
+                                      href={practiceWebsite}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-primary hover:text-primary/80 underline text-sm break-all"
+                                      className="text-primary hover:text-primary/80 underline flex items-center gap-1 break-all"
                                     >
-                                      {resultingUrl}
-                                    </a>
-                                  </p>
-                                </div>
-                              )}
-
-                              {personInCharge && (
-                                <div>
-                                  <span className="font-medium text-muted-foreground">
-                                    Person in Charge:
-                                  </span>
-                                  <div className="mt-1 text-sm">
-                                    <span className="font-medium">
-                                      {personInCharge.name}
-                                    </span>
-                                    {personInCharge.role && (
-                                      <span className="text-muted-foreground">
-                                        {" "}
-                                        • {personInCharge.role}
+                                      <Globe className="h-4 w-4 shrink-0" />
+                                      <span className="break-all">
+                                        {practiceWebsite}
                                       </span>
-                                    )}
-                                    {personInCharge.credentials && (
-                                      <Badge
-                                        variant="outline"
-                                        className="ml-2 text-xs"
+                                    </a>
+                                  ) : (
+                                    <span className="text-muted-foreground">
+                                      Not available
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              {practiceEmail && (
+                                <>
+                                  <Separator />
+                                  <div>
+                                    <span className="font-medium text-muted-foreground">
+                                      Practice Email:
+                                    </span>
+                                    <p className="mt-1">
+                                      <a
+                                        href={`mailto:${practiceEmail}`}
+                                        className="text-primary hover:text-primary/80 flex items-center gap-1 break-all"
                                       >
-                                        {personInCharge.credentials}
-                                      </Badge>
-                                    )}
+                                        <Mail className="h-4 w-4 shrink-0" />
+                                        <span className="break-all">
+                                          {practiceEmail}
+                                        </span>
+                                      </a>
+                                    </p>
                                   </div>
-                                </div>
-                              )}
-
-                              {worksMultipleLocations !== undefined && (
-                                <div>
-                                  <span className="font-medium text-muted-foreground">
-                                    Multiple Locations:
-                                  </span>
-                                  <div className="mt-1">
-                                    <Badge
-                                      variant={
-                                        worksMultipleLocations
-                                          ? "default"
-                                          : "secondary"
-                                      }
-                                    >
-                                      {worksMultipleLocations ? "Yes" : "No"}
-                                    </Badge>
-                                  </div>
-                                </div>
+                                </>
                               )}
                             </CardContent>
                           </Card>
 
+                          {/* Practice Details Card */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <Stethoscope className="h-5 w-5" />
+                                Practice Details
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Practice Type:
+                                </span>
+                                <p className="text-foreground mt-1">
+                                  <Badge variant="secondary">
+                                    {getPracticeType(specialties)}
+                                  </Badge>
+                                </p>
+                              </div>
+                              <Separator />
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Primary Specialty:
+                                </span>
+                                <p className="text-foreground mt-1">
+                                  <Badge variant="outline">
+                                    {getPrimarySpecialty(specialties)}
+                                  </Badge>
+                                </p>
+                              </div>
+                              <Separator />
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Services Offered:
+                                </span>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {specialties.length > 0 ? (
+                                    specialties.map((specialty, index) => (
+                                      <Badge key={index} variant="secondary">
+                                        {specialty}
+                                      </Badge>
+                                    ))
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">
+                                      Not available
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="space-y-6">
+                          {/* Leadership & Team Card */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <Users className="h-5 w-5" />
+                                Leadership & Team
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {personInCharge && (
+                                <>
+                                  <div>
+                                    <span className="font-medium text-muted-foreground">
+                                      Person in Charge:
+                                    </span>
+                                    <div className="mt-1">
+                                      <p className="font-semibold text-foreground">
+                                        {personInCharge.name}
+                                      </p>
+                                      {personInCharge.role && (
+                                        <p className="text-sm text-muted-foreground">
+                                          {personInCharge.role}
+                                          {personInCharge.credentials &&
+                                            ` (${personInCharge.credentials})`}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Separator />
+                                </>
+                              )}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <span className="font-medium text-muted-foreground text-sm">
+                                    Dentists:
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Stethoscope className="h-5 w-5 text-green-600" />
+                                    <span className="text-2xl font-bold text-foreground">
+                                      {numberOfDentists}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-muted-foreground text-sm">
+                                    Hygienists:
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Users className="h-5 w-5 text-purple-600" />
+                                    <span className="text-2xl font-bold text-foreground">
+                                      {numberOfHygienists}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <Separator />
+                              <div>
+                                <span className="font-medium text-muted-foreground">
+                                  Number of Related Locations:
+                                </span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <MapPin className="h-5 w-5 text-blue-600" />
+                                  <span className="text-2xl font-bold text-foreground">
+                                    {locations.length}
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Additional Information Card */}
                           {scrapeNotes && (
                             <Card>
                               <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                   <Lightbulb className="h-5 w-5" />
-                                  Scrape Notes
+                                  Additional Information
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
@@ -594,7 +631,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
                             </Card>
                           )}
                         </div>
-                      )}
+                      </div>
                     </TabsContent>
 
                     {/* Locations Tab */}
@@ -746,92 +783,6 @@ export default function LeadView({ leadData }: LeadViewProps) {
                             </TableBody>
                           </Table>
                         </div>
-                      </div>
-                    </TabsContent>
-
-                    {/* Contact Tab */}
-                    <TabsContent value="contact" className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <Phone className="h-5 w-5" />
-                              Main Contact
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div>
-                              <span className="font-medium text-muted-foreground">
-                                Phone:
-                              </span>
-                              <p className="mt-1">
-                                {practicePhone ? (
-                                  <a
-                                    href={`tel:${practicePhone}`}
-                                    className="text-primary hover:text-primary/80 flex items-center gap-1"
-                                  >
-                                    <Phone className="h-4 w-4" />
-                                    {practicePhone}
-                                  </a>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    Not available
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-muted-foreground">
-                                Email:
-                              </span>
-                              <p className="mt-1">
-                                {practiceEmail ? (
-                                  <a
-                                    href={`mailto:${practiceEmail}`}
-                                    className="text-primary hover:text-primary/80 flex items-center gap-1"
-                                  >
-                                    <Mail className="h-4 w-4" />
-                                    {practiceEmail}
-                                  </a>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    Not available
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <MapPin className="h-5 w-5" />
-                              Office Locations
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            {locations.map((location) => (
-                              <div
-                                key={location.id}
-                                className="border-l-2 border-primary pl-3"
-                              >
-                                <p className="font-medium">{location.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {location.address}
-                                </p>
-                                <p className="text-sm">
-                                  <a
-                                    href={`tel:${location.phone}`}
-                                    className="text-primary hover:text-primary/80"
-                                  >
-                                    {location.phone}
-                                  </a>
-                                </p>
-                              </div>
-                            ))}
-                          </CardContent>
-                        </Card>
                       </div>
                     </TabsContent>
 
