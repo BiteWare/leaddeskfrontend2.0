@@ -15,6 +15,7 @@
  */
 
 import { isDSO } from "./dso-check";
+import { cohortDefinitions } from "./cohort-loader";
 
 export type CohortType =
   | "Dealers"
@@ -115,14 +116,8 @@ function isGeneralDentistry(specialties: string[] | null | undefined): boolean {
 /**
  * Classifies a lead into a cohort based on practice information
  *
- * Uses first-match-wins logic:
- * - Dealers: Group name contains "Dealers"
- * - Government: .gov domain
- * - Education: .edu domain OR university/college keywords OR group name "US Schools"
- * - Clinic: Name includes foundation/community/CHC/clinic/center keywords OR specialty = "Public Health"
- * - Pediatric: Name includes pediatric keywords OR specialty = "Pediatric Dentistry" (excluding general dentistry)
- * - DSO: Multi-location practices with corporate patterns (dental group/partners/associates)
- * - Uncategorized: Only when insufficient data to classify
+ * Uses first-match-wins logic with priority-based cohort definitions from JSON.
+ * Each cohort is checked in order of priority.
  *
  * @param input - Practice information for classification
  * @returns Cohort type
@@ -144,125 +139,101 @@ export function classifyCohort(input: CohortClassificationInput): CohortType {
     worksMultipleLocations,
   });
 
-  // Rule 1: Dealers - group name contains "Dealers"
-  if (containsKeyword(groupName, ["Dealers"])) {
-    console.log("✅ Matched: Dealers (group name)");
-    return "Dealers";
-  }
-
-  // Rule 2: Government - .gov domain
   const domain = extractDomain(resultingUrl);
-  if (domain.endsWith(".gov")) {
-    console.log("✅ Matched: Government (.gov domain)");
-    return "Government";
-  }
 
-  // Rule 3: Education - .edu domain OR university/college keywords OR group name "US Schools"
-  const educationKeywords = [
-    "university",
-    "college",
-    "school of dentistry",
-    "dental school",
-  ];
-  if (
-    domain.endsWith(".edu") ||
-    containsKeyword(practiceName, educationKeywords) ||
-    containsKeyword(groupName, ["US Schools"])
-  ) {
-    console.log(
-      "✅ Matched: Education (.edu domain, educational keywords, or US Schools)",
-    );
-    return "Education";
-  }
+  // Sort cohort definitions by priority (lower number = higher priority)
+  const sortedCohorts = [...cohortDefinitions].sort(
+    (a, b) => a.priority - b.priority,
+  );
 
-  // Rule 4: Clinic - name includes foundation/community/CHC/clinic/center OR specialty = "Public Health"
-  const clinicKeywords = [
-    "foundation",
-    "community",
-    "chc",
-    "dental clinic",
-    "dental center",
-    "oral health center",
-    "health center",
-  ];
-  if (
-    containsKeyword(practiceName, clinicKeywords) ||
-    hasSpecialty(specialties, ["Public Health"])
-  ) {
-    console.log(
-      "✅ Matched: Clinic (foundation/community/CHC/clinic/center or Public Health)",
-    );
-    return "Clinic";
-  }
+  // Iterate through cohorts in priority order
+  for (const cohort of sortedCohorts) {
+    // Skip Uncategorized - it's the final fallback
+    if (cohort.name === "Uncategorized") continue;
 
-  // Rule 5: Pediatric - name includes pediatric keywords OR specialty = "Pediatric Dentistry"
-  // BUT exclude if it's EXCLUSIVELY general dentistry practice
-  const pediatricKeywords = ["kids", "pediatric", "children", "sugarbug"];
-  const hasPediatricName = containsKeyword(practiceName, pediatricKeywords);
-  const hasPediatricSpecialty = hasSpecialty(specialties, [
-    "Pediatric Dentistry",
-    "Pediatrics",
-  ]);
-  const isExclusivelyGeneral = isGeneralDentistry(specialties);
+    // Check group name matches
+    if (cohort.groupNames && cohort.groupNames.length > 0) {
+      if (containsKeyword(groupName, cohort.groupNames)) {
+        console.log(`✅ Matched: ${cohort.name} (group name)`);
+        return cohort.name as CohortType;
+      }
+    }
 
-  console.log("🔍 Pediatric check:", {
-    hasPediatricName,
-    hasPediatricSpecialty,
-    isExclusivelyGeneral,
-    specialties,
-  });
+    // Check domain suffixes
+    if (cohort.domainSuffixes && cohort.domainSuffixes.length > 0) {
+      if (cohort.domainSuffixes.some((suffix) => domain.endsWith(suffix))) {
+        console.log(`✅ Matched: ${cohort.name} (domain suffix)`);
+        return cohort.name as CohortType;
+      }
+    }
 
-  if ((hasPediatricName || hasPediatricSpecialty) && !isExclusivelyGeneral) {
-    console.log(
-      "✅ Matched: Pediatric (pediatric keywords or specialty, not exclusively general)",
-    );
-    return "Pediatric";
-  }
+    // Check keywords in practice name
+    if (cohort.keywords && cohort.keywords.length > 0) {
+      if (containsKeyword(practiceName, cohort.keywords)) {
+        // Special logic for Pediatric: exclude if ONLY general dentistry
+        if (cohort.excludeIfGeneralOnly && isGeneralDentistry(specialties)) {
+          console.log(
+            `⏭️ Skipping ${cohort.name}: practice is exclusively general dentistry`,
+          );
+          continue;
+        }
 
-  // Rule 6: DSO - Centralized exclusion list + Multi-location practices with corporate patterns
-  // First, check against the centralized DSO exclusion list
-  if (isDSO(practiceName || "", domain)) {
-    console.log("✅ Matched: DSO (centralized exclusion list)");
-    return "DSO";
-  }
+        // Special logic for DSO: check if multi-location or strong brand
+        if (cohort.name === "DSO") {
+          // First check centralized DSO exclusion list
+          if (isDSO(practiceName || "", domain)) {
+            console.log("✅ Matched: DSO (centralized exclusion list)");
+            return "DSO";
+          }
 
-  // Fallback: Check for corporate patterns + multi-location (existing logic)
-  const dsoKeywords = [
-    "dental group",
-    "dental partners",
-    "dental associates",
-    "family dental",
-    "smile brands",
-    "aspen dental",
-    "bright now",
-    "dental care alliance",
-    "heartland dental",
-    "pacific dental",
-    "affordable care",
-    "smile doctors",
-    "dental care group",
-    "dental organization",
-  ];
+          // For DSO keywords, check if it requires multi-location
+          if (cohort.requiresMultiLocation) {
+            const hasStrongBrand = cohort.strongBrands
+              ? containsKeyword(practiceName, cohort.strongBrands)
+              : false;
 
-  // DSO detection: corporate keywords + multi-location OR just strong DSO brand names
-  const hasDSOKeywords = containsKeyword(practiceName, dsoKeywords);
-  const isMultiLocation = worksMultipleLocations === true;
+            if (worksMultipleLocations || hasStrongBrand) {
+              console.log(
+                `✅ Matched: ${cohort.name} (keywords + multi-location or strong brand)`,
+              );
+              return cohort.name as CohortType;
+            } else {
+              console.log(
+                `⏭️ Skipping ${cohort.name}: has keywords but not multi-location`,
+              );
+              continue;
+            }
+          }
+        }
 
-  // Strong DSO brand names that indicate DSO even without multi-location confirmation
-  const strongDSOBrands = [
-    "aspen dental",
-    "bright now",
-    "heartland dental",
-    "pacific dental",
-    "smile brands",
-  ];
-  const hasStrongDSOBrand = containsKeyword(practiceName, strongDSOBrands);
+        console.log(`✅ Matched: ${cohort.name} (keywords)`);
+        return cohort.name as CohortType;
+      }
+    }
 
-  if (hasDSOKeywords && (isMultiLocation || hasStrongDSOBrand)) {
-    console.log(
-      "✅ Matched: DSO (corporate keywords + multi-location or strong brand)",
-    );
-    return "DSO";
+    // Check specialty matches
+    if (cohort.specialties && cohort.specialties.length > 0) {
+      if (hasSpecialty(specialties, cohort.specialties)) {
+        // Special logic for Pediatric: exclude if ONLY general dentistry
+        if (cohort.excludeIfGeneralOnly && isGeneralDentistry(specialties)) {
+          console.log(
+            `⏭️ Skipping ${cohort.name}: practice is exclusively general dentistry`,
+          );
+          continue;
+        }
+
+        console.log(`✅ Matched: ${cohort.name} (specialty)`);
+        return cohort.name as CohortType;
+      }
+    }
+
+    // Special DSO check: centralized exclusion list (if not already checked)
+    if (cohort.name === "DSO") {
+      if (isDSO(practiceName || "", domain)) {
+        console.log("✅ Matched: DSO (centralized exclusion list)");
+        return "DSO";
+      }
+    }
   }
 
   // Rule 7: Uncategorized - Only when we have insufficient data to classify

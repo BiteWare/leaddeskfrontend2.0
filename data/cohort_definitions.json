@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Dealers",
+    "priority": 1,
+    "groupNames": ["Dealers"],
+    "keywords": [],
+    "color": "purple"
+  },
+  {
+    "name": "Government",
+    "priority": 2,
+    "domainSuffixes": [".gov"],
+    "keywords": [],
+    "color": "gray"
+  },
+  {
+    "name": "Education",
+    "priority": 3,
+    "domainSuffixes": [".edu"],
+    "groupNames": ["US Schools"],
+    "keywords": ["university", "college", "school of dentistry", "dental school"],
+    "color": "yellow"
+  },
+  {
+    "name": "Clinic",
+    "priority": 4,
+    "keywords": [
+      "foundation",
+      "community",
+      "chc",
+      "dental clinic",
+      "dental center",
+      "oral health center",
+      "health center"
+    ],
+    "specialties": ["Public Health"],
+    "color": "green"
+  },
+  {
+    "name": "Pediatric",
+    "priority": 5,
+    "keywords": ["kids", "pediatric", "children", "sugarbug"],
+    "specialties": ["Pediatric Dentistry", "Pediatrics"],
+    "excludeIfGeneralOnly": true,
+    "color": "blue"
+  },
+  {
+    "name": "DSO",
+    "priority": 6,
+    "keywords": [
+      "dental group",
+      "dental partners",
+      "dental associates",
+      "family dental",
+      "smile brands",
+      "aspen dental",
+      "bright now",
+      "dental care alliance",
+      "heartland dental",
+      "pacific dental",
+      "affordable care",
+      "smile doctors",
+      "dental care group",
+      "dental organization"
+    ],
+    "strongBrands": [
+      "aspen dental",
+      "bright now",
+      "heartland dental",
+      "pacific dental",
+      "smile brands"
+    ],
+    "requiresMultiLocation": true,
+    "color": "red"
+  },
+  {
+    "name": "Uncategorized",
+    "priority": 7,
+    "keywords": [],
+    "color": "slate"
+  }
+]

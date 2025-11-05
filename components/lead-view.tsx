@@ -40,6 +40,7 @@ import {
   Code,
   Copy,
 } from "lucide-react";
+import { getCohortColor } from "@/utils/cohort-loader";
 
 export interface StaffMember {
   name: string;
@@ -95,29 +96,25 @@ interface LeadViewProps {
 
 /**
  * Returns Tailwind color classes for cohort badge based on cohort type
+ * Note: This function now uses getCohortColor from cohort-loader.ts
  */
-function getCohortColor(cohort: string | undefined): string {
+function getCohortColorClasses(cohort: string | undefined): string {
   if (!cohort) return "bg-slate-500/10 text-slate-700 border-slate-300";
 
-  const cohortLower = cohort.toLowerCase();
+  const color = getCohortColor(cohort);
 
-  switch (cohortLower) {
-    case "pediatric":
-      return "bg-blue-500/10 text-blue-700 border-blue-300";
-    case "clinic":
-      return "bg-green-500/10 text-green-700 border-green-300";
-    case "government":
-      return "bg-gray-500/10 text-gray-700 border-gray-300";
-    case "dso":
-      return "bg-red-500/10 text-red-700 border-red-300";
-    case "education":
-      return "bg-yellow-500/10 text-yellow-700 border-yellow-300";
-    case "dealers":
-      return "bg-purple-500/10 text-purple-700 border-purple-300";
-    case "uncategorized":
-    default:
-      return "bg-slate-500/10 text-slate-700 border-slate-300";
-  }
+  // Map color name to Tailwind classes
+  const colorMap: Record<string, string> = {
+    blue: "bg-blue-500/10 text-blue-700 border-blue-300",
+    green: "bg-green-500/10 text-green-700 border-green-300",
+    gray: "bg-gray-500/10 text-gray-700 border-gray-300",
+    red: "bg-red-500/10 text-red-700 border-red-300",
+    yellow: "bg-yellow-500/10 text-yellow-700 border-yellow-300",
+    purple: "bg-purple-500/10 text-purple-700 border-purple-300",
+    slate: "bg-slate-500/10 text-slate-700 border-slate-300",
+  };
+
+  return colorMap[color] || "bg-slate-500/10 text-slate-700 border-slate-300";
 }
 
 /**
@@ -270,7 +267,7 @@ export default function LeadView({ leadData }: LeadViewProps) {
                   {cohort && (
                     <Badge
                       variant="outline"
-                      className={getCohortColor(cohort)}
+                      className={getCohortColorClasses(cohort)}
                       title="Automatically classified cohort"
                     >
                       {cohort}
