@@ -4,758 +4,772 @@
     "hooks\\useJobData.ts": {
       "fileHash": "5c7113207f53d8052c3d4aa0513ae171270dc7e181763e42bc00b5b07737d9b1",
       "suggestions": [],
-      "lastModified": 1762205477475,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480025,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "tailwind.config.ts": {
       "fileHash": "c01a48ca9b0ce855e8099512e3eb69aae57a459340497870dac92790b1c28c26",
       "suggestions": [],
-      "lastModified": 1762205477477,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450479992,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "hooks\\index.ts": {
       "fileHash": "4ac7a86fe136af3080853da13c505db5d51dd29ada8244d7d76e89d17bcda731",
       "suggestions": [],
-      "lastModified": 1762205477479,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450479994,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\loading.tsx": {
       "fileHash": "6c325f1d969a99745aed28ceb470e7ff1f48d059f2ec616ca20f99484d6ba0c8",
       "suggestions": [],
-      "lastModified": 1762205477481,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480002,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\layout.tsx": {
       "fileHash": "a971a1d8e476d9582d5cd9437cc2d9eb0ab0340f213a6186528b8daf370f5bca",
       "suggestions": [],
-      "lastModified": 1762205477483,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480001,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "lib\\utils.ts": {
       "fileHash": "74a147991a119f1c4cdc25a4d9b22713632fa32eb136e55ab6939b006d71b9d6",
       "suggestions": [],
-      "lastModified": 1762205477485,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480028,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\Searchbar.tsx": {
       "fileHash": "e8a50a0252eabebeb9467e1b261b4d330bed4ace0f63b24c64696e87abaab3e8",
       "suggestions": [],
-      "lastModified": 1762205477487,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480018,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\job-loader.tsx": {
       "fileHash": "aa5950845ee3e0f4034b6446f031f87895c51ca42e0c0318306d232eb9128578",
       "suggestions": [],
-      "lastModified": 1762205477490,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480011,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "hooks\\use-mobile.tsx": {
       "fileHash": "d2377fbad5ad2bdf7fa896a68c36ac8bf4aa74a974b2061f77b41ae58d623001",
       "suggestions": [],
-      "lastModified": 1762205477492,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480019,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "hooks\\use-toast.ts": {
       "fileHash": "dfc2ee5d2da75fbbdb3665ed1a6969405c8246200aeca11199a10a0b786c7a11",
       "suggestions": [],
-      "lastModified": 1762205477494,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480023,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\auth-guard.tsx": {
       "fileHash": "72461d895e541e9139df3ca1773601fc99090212651745156efa2d6f82eb12a7",
       "suggestions": [],
-      "lastModified": 1762205477496,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480008,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\step-progression.tsx": {
       "fileHash": "12ff22664a4367f5786d60066a822c3fa88e5d32632009f5f3e925b729d59923",
       "suggestions": [],
-      "lastModified": 1762205477498,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480015,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\login-form.tsx": {
       "fileHash": "5b6ccd3ab690ec424e58787c5e9438118807b393ed8900a6017481c1ec85d626",
       "suggestions": [],
-      "lastModified": 1762205477499,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480016,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "hooks\\useUsers.ts": {
       "fileHash": "5d0f102704e2b6764577fd969f118c8f04baa4ff51eb9afdf5dc714b0679c1c9",
       "suggestions": [],
-      "lastModified": 1762205477501,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480027,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\app-sidebar-custom.tsx": {
       "fileHash": "cba98220b2d6b32bf21298e8dfb270ea7259d0f4655d8836237eaeeb9eb11560",
       "suggestions": [],
-      "lastModified": 1762205477503,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480006,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "middleware.ts": {
       "fileHash": "027de7090de5c3a818741254150c4dae79e27009f67af2896c246085cf0dce37",
       "suggestions": [],
-      "lastModified": 1762205477505,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450479990,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "hooks\\useLeadJobStatus.ts": {
       "fileHash": "809cc84f7b372acf278b2f77eff7f2a9c6a6dd627ba179485cc7afbc69f610cf",
       "suggestions": [],
-      "lastModified": 1762205477507,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480030,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\page.tsx": {
       "fileHash": "5868fed2f1f6812d273ae7b1866b95a7197cf832c08aac40a7c04e3d398e1c59",
       "suggestions": [],
-      "lastModified": 1762205477513,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480004,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\theme-provider.tsx": {
       "fileHash": "c3ad0a142080a20c3229c1ceefd74e3fe0fd1f371dec8b07889c9d2b448d5c50",
       "suggestions": [],
-      "lastModified": 1762205477514,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480021,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\job-error-display.tsx": {
       "fileHash": "57e23acc59b894c716afeb681d8ef1cb5adbc2cf29d31c0446141f5c78fca2b8",
       "suggestions": [],
-      "lastModified": 1762205477516,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480012,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\auth\\page.tsx": {
       "fileHash": "0be3b88a1aa768cf043148d1b34075b1e5a007a5d0eaa4b32f4ae30cc0d32eaa",
       "suggestions": [],
-      "lastModified": 1762205477532,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480044,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\alert-dialog.tsx": {
       "fileHash": "7ad6b7b4089e7d534b493cc26b69a9deaf452c40b72c394e658573727b863f82",
       "suggestions": [],
-      "lastModified": 1762205477534,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480049,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "utils\\supabase-client.ts": {
       "fileHash": "9d674ebbd74806f23e53fe47fc2585caff7c98e19b26de52192f0fd343bcb49e",
       "suggestions": [],
-      "lastModified": 1762205477535,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480043,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "utils\\dso-check.ts": {
       "fileHash": "491e4ae4ff1a6909d00d0d99751b3f9fc2639224d08b4c9a853f282a71c3b265",
       "suggestions": [],
-      "lastModified": 1762205477536,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480038,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\avatar.tsx": {
       "fileHash": "4ee6fbff6d693bf5b76f1b30e4cd55de6c6343c46a51e636c3e3b8a911fa7ec0",
       "suggestions": [],
-      "lastModified": 1762205477538,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480054,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "types\\database.types.ts": {
       "fileHash": "beca0c3d9761a8c41053210b5fb01bd3f7c4475a84e79cac494362d21b3bd368",
       "suggestions": [],
-      "lastModified": 1762205477539,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480031,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "utils\\supabase.ts": {
       "fileHash": "cb1905ed2315373950a326aa24f4278c0b50df71f8aeb42ca2bcbbbbcdd05bb8",
       "suggestions": [],
-      "lastModified": 1762205477541,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480042,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\accordion.tsx": {
       "fileHash": "0e1f5372cd65108a50619aa34b4f9f388c00533af1b994d4766e57a20d9fd378",
       "suggestions": [],
-      "lastModified": 1762205477543,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480047,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\alert.tsx": {
       "fileHash": "1aaba23c7a1095f7abea7c9f6ce12a43c22bb8f97e957c9cae222666e0c8be83",
       "suggestions": [],
-      "lastModified": 1762205477548,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480050,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\aspect-ratio.tsx": {
       "fileHash": "8480457821bf2d8680ea7104b3db4620017276d36969d0bad26da7614106471a",
       "suggestions": [],
-      "lastModified": 1762205477549,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480052,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "utils\\scraper-parser.ts": {
       "fileHash": "ead4913a1bc2ba9d8babd30df1809144cdf35c09119121c1d60c2089594e32b0",
       "suggestions": [],
-      "lastModified": 1762205477551,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480039,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\results\\page.tsx": {
       "fileHash": "12f4734a56150f7c5d7f635c03985c2b4e83d961499ff9e42396843ba9f8f99c",
       "suggestions": [],
-      "lastModified": 1762205477552,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480046,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\breadcrumb.tsx": {
       "fileHash": "76807d2c1be3d1e5e0e055ffbecd8451acfc71db6a7aa3c8660631d7603d517f",
       "suggestions": [],
-      "lastModified": 1762205477555,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480059,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\card.tsx": {
       "fileHash": "1bceacbfe1abb403def6cb76df0ae0c2a898177b8d394c05280825a9f5e803b9",
       "suggestions": [],
-      "lastModified": 1762205477556,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480060,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\carousel.tsx": {
       "fileHash": "3dc7708dc950eb3ce339a4e76d10a7364edc00070131239b3d7dc200c3302e26",
       "suggestions": [],
-      "lastModified": 1762205477558,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480062,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\button.tsx": {
       "fileHash": "376e7a3c1f6efe5bec442d24106cfb9da6aacc8ccf6fc4b859dfa776949eec41",
       "suggestions": [],
-      "lastModified": 1762205477559,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480056,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\calendar.tsx": {
       "fileHash": "25d9c8c731e319b95f47ee8e487e4476a0591490d065ce22700272bee8f19944",
       "suggestions": [],
-      "lastModified": 1762205477561,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480057,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\collapsible.tsx": {
       "fileHash": "bc854800960ef4129d4679a7c4a6b5091e7038adc03698e4529d0c9b5af0d831",
       "suggestions": [],
-      "lastModified": 1762205477562,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480065,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\badge.tsx": {
       "fileHash": "563824ae3f6b0a5de408c13e58fe2a195808ff57cb09698fcaf2e875434bfb98",
       "suggestions": [],
-      "lastModified": 1762205477564,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480053,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\checkbox.tsx": {
       "fileHash": "0b70a8021e2b8550119b1f21cfeda834fee40181eaffa92d124e24ef0703ee12",
       "suggestions": [],
-      "lastModified": 1762205477566,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480063,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\command.tsx": {
       "fileHash": "4c7bf04cfc03e3338a3f06ad631f3c0a7edd187d52d059725fb2c660cec2a24e",
       "suggestions": [],
-      "lastModified": 1762205477575,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480071,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\dialog.tsx": {
       "fileHash": "2f880e54b5db6d0eac033f2f28612c1b41f1dcae3b30b2ed3ca4f075ba3b161a",
       "suggestions": [],
-      "lastModified": 1762205477577,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480074,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\hover-card.tsx": {
       "fileHash": "f8ce6d69f7b5498825df548495ed36d1f9f7a8fa4b621bf04cbc2148fdfb6aa5",
       "suggestions": [],
-      "lastModified": 1762205477578,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480078,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\context-menu.tsx": {
       "fileHash": "c165c875898bc493d04b3f4e84a1eed6447e402c9752aa46e6f2ce672ddf495e",
       "suggestions": [],
-      "lastModified": 1762205477583,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480066,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\dropdown-menu.tsx": {
       "fileHash": "7f5f746ad3fc7a22c2ea141529af8e94c94b3fec3edd9db3bcdb516e3b84e182",
       "suggestions": [],
-      "lastModified": 1762205477585,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480075,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\label.tsx": {
       "fileHash": "8253ee4179284de5d037eee03b55f4499b04ff41ddfa60b3176ea28d4bdc301c",
       "suggestions": [],
-      "lastModified": 1762205477586,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480083,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\input-otp.tsx": {
       "fileHash": "08c9f42b69bd2b238afe6cf9f6a71f9244d1dde6f66c28b0d608588f4a10f67f",
       "suggestions": [],
-      "lastModified": 1762205477588,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480080,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\navigation-menu.tsx": {
       "fileHash": "71cf201e04c0eca840d481d0a101254a2eeab3291d95eb7f5a3e870ac3cbbc98",
       "suggestions": [],
-      "lastModified": 1762205477589,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480087,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\form.tsx": {
       "fileHash": "924c7c8de08db88c599e7c509a757d5d4f9aa1b2bc6d1e6a1ac395616d3513c2",
       "suggestions": [],
-      "lastModified": 1762205477591,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480077,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\drawer.tsx": {
       "fileHash": "98895f2b716a0a0b60e372811640b3b3b48295e0a67aebbd01de9843a391f6e1",
       "suggestions": [],
-      "lastModified": 1762205477592,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480073,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\input.tsx": {
       "fileHash": "28de1821f9b05b4b16e99f4757c68303fb187447354d6e894b3709a27de80f46",
       "suggestions": [],
-      "lastModified": 1762205477594,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480082,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\popover.tsx": {
       "fileHash": "fa3051cfd0196eaf41de55bb8b385c6cb32078edad8dbf59062d551347e80457",
       "suggestions": [],
-      "lastModified": 1762205477595,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480090,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\pagination.tsx": {
       "fileHash": "7f9821730c7eea34c32da11aa82185d3db1d36f9d476fa9d5ae14765c35a6fc8",
       "suggestions": [],
-      "lastModified": 1762205477596,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480085,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\progress.tsx": {
       "fileHash": "30250063955f8d24d262a3917cec3d5fd344db46758baba2eba81dffcc8392c3",
       "suggestions": [],
-      "lastModified": 1762205477598,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480088,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\resizable.tsx": {
       "fileHash": "bbb236cf580525f2f1f7e40404d34c03cf806c02eee8404891f72fcf5034ec31",
       "suggestions": [],
-      "lastModified": 1762205477599,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480094,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\menubar.tsx": {
       "fileHash": "2ad404c25028ffec97ba498010d82977f00efff030a98d0310cb1ed8b46256a8",
       "suggestions": [],
-      "lastModified": 1762205477601,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480084,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\radio-group.tsx": {
       "fileHash": "f3cef3b16f7de803bae0413e7b67818c3b94240d962a3cc17b2720122fa81ae9",
       "suggestions": [],
-      "lastModified": 1762205477602,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480091,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\separator.tsx": {
       "fileHash": "d2dec642afe71c74e76f2f3ee8a2a30fde5743ef7c5d1c30ee21d4ec23d574e8",
       "suggestions": [],
-      "lastModified": 1762205477604,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480098,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\select.tsx": {
       "fileHash": "32bbe2f038e3f5632377069c75217039e27fa19b985dac49808fe8374c34e292",
       "suggestions": [],
-      "lastModified": 1762205477605,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480095,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\scroll-area.tsx": {
       "fileHash": "3efa46a50eaa57e62c746479ecc9347add5297afe8f63fc02dbee53e56076771",
       "suggestions": [],
-      "lastModified": 1762205477607,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480093,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\skeleton.tsx": {
       "fileHash": "90badf0dcd440128b81554c06d56c4f01b1ccf03748ca3adf7e4a41d611acddd",
       "suggestions": [],
-      "lastModified": 1762205477613,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480099,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\table.tsx": {
       "fileHash": "54bfa4489e6dc84dceb294b63023bb352c6c446c019c67230ce6f1dac76e3713",
       "suggestions": [],
-      "lastModified": 1762205477619,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480108,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\sheet.tsx": {
       "fileHash": "c02a18d6c73b21078ca394465b819b4cebeef60778c3bdcd3e1f818522981f0f",
       "suggestions": [],
-      "lastModified": 1762205477621,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480096,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\textarea.tsx": {
       "fileHash": "f05dce17b28f0fc4a10bc54231937f682f459f174d69c918b5540047901dd5dd",
       "suggestions": [],
-      "lastModified": 1762205477622,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480111,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\tabs.tsx": {
       "fileHash": "93eb37094e3604daa8f4c8b2dbe5eb88eef3798566a8e54aee2455fb46489783",
       "suggestions": [],
-      "lastModified": 1762205477623,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480110,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\slider.tsx": {
       "fileHash": "58a376350339a866b1b24d4425f3b0526e92dcd94a400112944dc6cfdc7b926e",
       "suggestions": [],
-      "lastModified": 1762205477625,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480101,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\switch.tsx": {
       "fileHash": "e536d07f3bb344983c7fccfdb61567954ab04a4e72e49e3e12b84c2216173136",
       "suggestions": [],
-      "lastModified": 1762205477627,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480107,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\toast.tsx": {
       "fileHash": "e4a0fc226cc072a6ed5712fea824462f3a45f41188fe627e9ec2c85366ecbefd",
       "suggestions": [],
-      "lastModified": 1762205477629,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480114,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\toaster.tsx": {
       "fileHash": "8d358fb5a3411c29e842c8aee0ba68c0c85a9b1dcf080dba6555fcf17165ebc3",
       "suggestions": [],
-      "lastModified": 1762205477630,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480113,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\toggle-group.tsx": {
       "fileHash": "04c1ac2983a3b790295fae9a0c475b32c61d6c49954e65eb38b54fa9af09f9dc",
       "suggestions": [],
-      "lastModified": 1762205477632,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480115,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\sonner.tsx": {
       "fileHash": "16ab4f1f4c538f3991751b31c64d930b44a4d20caef51629ee13c3517db9a986",
       "suggestions": [],
-      "lastModified": 1762205477633,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480106,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\use-mobile.tsx": {
       "fileHash": "d2377fbad5ad2bdf7fa896a68c36ac8bf4aa74a974b2061f77b41ae58d623001",
       "suggestions": [],
-      "lastModified": 1762205477634,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480119,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\tooltip.tsx": {
       "fileHash": "63255ea6219e9fe283854e1364aa38e0a33b69263cb74055d911ec380211a324",
       "suggestions": [],
-      "lastModified": 1762205477636,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480118,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\toggle.tsx": {
       "fileHash": "0ee8625a646f54d851d1d09ed369597a8f55ada4a3179e3e926a290276890bfe",
       "suggestions": [],
-      "lastModified": 1762205477637,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480116,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\use-toast.ts": {
       "fileHash": "dfc2ee5d2da75fbbdb3665ed1a6969405c8246200aeca11199a10a0b786c7a11",
       "suggestions": [],
-      "lastModified": 1762205477639,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480120,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\api\\check-job-status\\route.ts": {
       "fileHash": "ff9caa58d6e6845315f5070b19aabdefb89285aa0d3308f226344d341ebd6e5c",
       "suggestions": [],
-      "lastModified": 1762205477641,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480122,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\api\\search-practices\\route.ts": {
       "fileHash": "f785ffdcb32fa60b243ad3109d4fbd1de504aac0f712965d203c6bddd05a7d2d",
       "suggestions": [],
-      "lastModified": 1762205477642,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480129,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\api\\get-job-users\\route.ts": {
       "fileHash": "31ef3276fa6648f4dd91b933b8206f433e6b63a3cba3dc362ba11f2465ff6c33",
       "suggestions": [],
-      "lastModified": 1762205477643,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480123,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\api\\kill-job\\route.ts": {
       "fileHash": "563c6534a7eaf45843c49db4a680ca7aead780459c4af6107aff6b5873018404",
       "suggestions": [],
-      "lastModified": 1762205477645,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480124,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\api\\submit-leaddesk\\route.ts": {
       "fileHash": "8856654fae4470d5be61869d635e8bae1df4953583332ddd27cff5ee8b2ff2be",
       "suggestions": [],
-      "lastModified": 1762205477647,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480128,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\api\\redo-job\\route.ts": {
       "fileHash": "4d18b1eea8771b6aee1d337c00cb7e6a60fd37bb5e2d8734aa0af44c05fbdff6",
       "suggestions": [],
-      "lastModified": 1762205477656,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480125,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "next.config.mjs": {
       "fileHash": "4f276c545a701c7f860e9a654c232a1208f873f44ad09117eeb0b0bdab535038",
       "suggestions": [],
-      "lastModified": 1762205477660,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480143,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "postcss.config.mjs": {
       "fileHash": "da1e5e8147fb42cbc582a60607fea0df35171ae60bd5617846c841568bbe2272",
       "suggestions": [],
-      "lastModified": 1762205477661,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480145,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\results\\[id]\\job-results-client.tsx": {
       "fileHash": "04b28dfc5fc596fe3d8bc993395647f4f5f11c1d5b906bd81b0b8f6bf7f312e8",
       "suggestions": [],
-      "lastModified": 1762205477663,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480127,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "tsconfig.json": {
       "fileHash": "50c46c44bee606c23864165f4cb9304438fe68377047645e1b25c3f5b237d910",
       "suggestions": [],
-      "lastModified": 1762205477664,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480147,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\jobs-table.tsx": {
       "fileHash": "2d68d9411b4fbcfc2a42895ab58478b33820ef54a082da99ca9e6322e82e0961",
       "suggestions": [],
-      "lastModified": 1762205477666,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480133,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "utils\\cohort-classifier.ts": {
-      "fileHash": "3f131e8ddbbb3c218a065f9a5ee1fece15b6feddf89a41567600bf3f7eaf8352",
+      "fileHash": "423e9bd008a261982fb7cada547789c783ff9edc39166719960e26c596a7d8a2",
       "suggestions": [],
-      "lastModified": 1762205477667,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480134,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components.json": {
       "fileHash": "842fd949aed05152f0b2b3696b0bfd449326b837326c5e732fa06f2e7f1982a6",
       "suggestions": [],
-      "lastModified": 1762205477668,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480149,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\results\\[id]\\page.tsx": {
       "fileHash": "970e05da54e052321b4fa2a99aefe7049d9faa600370cce0f3f5cbeb9ddeebe7",
       "suggestions": [],
-      "lastModified": 1762205477671,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480131,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "package.json": {
       "fileHash": "203f50c7a1345aa34c8bca9d48e2b13894f98a6ebcda84f69ccd29d1edcc6e44",
       "suggestions": [],
-      "lastModified": 1762205477672,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480146,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\chart.tsx": {
       "fileHash": "972b62cb5ef0cd19cf66fc3cb013328efb52824411dfcab14bfcbd1142fe1738",
       "suggestions": [],
-      "lastModified": 1762205477673,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480142,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "utils\\scraper-transformer.ts": {
-      "fileHash": "2daf18a906c1816b2f68b075da0002fcd55c0139072036bf7bf48d9febc715e5",
+      "fileHash": "632c1f57be88d588edadee4dc681ba65697a56cc443d3849820c87c96ecb6d07",
       "suggestions": [],
-      "lastModified": 1762205477674,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480137,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\ui\\sidebar.tsx": {
       "fileHash": "294bef98a2a97bf55d4714a491d152972b5b6ed623942bac5d5ad555fa587d20",
       "suggestions": [],
-      "lastModified": 1762205477675,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480141,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "README.md": {
       "fileHash": "f0778a9dcbcce16f8603b102d7d863587c88cea5632f91bd0c65cc5dc96e7f93",
       "suggestions": [],
-      "lastModified": 1762205477676,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480150,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "components\\lead-view.tsx": {
-      "fileHash": "30a9681ffdf5e284ca649eb6f86fb68ad67079b9e65c82e9ef6a6ac4b054286c",
+      "fileHash": "810342f410e2fac4b94d540af20658869acc4ea61ebc7d55bf14aa3fe3811143",
       "suggestions": [],
-      "lastModified": 1762205477677,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480135,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\batch-runs.md": {
       "fileHash": "450af3da831186ac0319552e5d9c6c897759cfeaa988796620618a2f4b50cd6e",
       "suggestions": [],
-      "lastModified": 1762205477680,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480156,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "app\\globals.css": {
       "fileHash": "86e308ae3e4445c70e142aeba1cf741636f1a00be877dd9d23b1e8ff04874359",
       "suggestions": [],
-      "lastModified": 1762205477681,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480153,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "data\\dso_exclusions.json": {
       "fileHash": "3a52570a8304fda7537cb795eadd90995132dab1d4fbcc23a77b972c85cbd73f",
       "suggestions": [],
-      "lastModified": 1762205477683,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480154,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\deployment-troubleshooting.md": {
       "fileHash": "fdb4ffa1ee28e8700b680f4d8812d9098b91b11b789374266fb787a8f6d1c1a1",
       "suggestions": [],
-      "lastModified": 1762205477690,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480158,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\FRONTEND-FIELD-UPDATES-SUMMARY.md": {
       "fileHash": "37ab092e4a41bad8ac7613c5dc38c852e1be6baa509e05ac614a03c0af1f1683",
       "suggestions": [],
-      "lastModified": 1762205477691,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480157,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\data-flow.md": {
       "fileHash": "958a8cff636117d13858d498b020d113549fb71489bb00ebf071fecb9bf584eb",
       "suggestions": [],
-      "lastModified": 1762205477694,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480166,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\leadview-component.md": {
       "fileHash": "fafea308741c8b5a5cdf03c8958a667deddf153ca29333237f2f89d458fb31a3",
       "suggestions": [],
-      "lastModified": 1762205477695,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480160,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\n8n-frontend-data-flow.md": {
       "fileHash": "30191d933477869abe45dc22dd3df18e0a8d330ada4d08fd3b6d4471a731e075",
       "suggestions": [],
-      "lastModified": 1762205477696,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480167,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\sidebar-implementation.md": {
       "fileHash": "2c619095395dcec55016cff4044a3820d055a82356561a0d04efa7183977b4f0",
       "suggestions": [],
-      "lastModified": 1762205477697,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480162,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "public\\zyris-logo.webp": {
       "fileHash": "5a3076922da1d063ce5f5e08dbf4ce80216c005a10e657120437759ebcd50099",
       "suggestions": [],
-      "lastModified": 1762205477698,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480164,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "public\\enrichment-template.xlsx": {
       "fileHash": "deb6217d39c1330ab8cd6e7ab66bd8827393c76765c2ac2e02882edba688347c",
       "suggestions": [],
-      "lastModified": 1762205477699,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480165,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "project-docs\\scraper-integration.md": {
       "fileHash": "c3cf68884d4ca8cee2b3944f49eaa2e1d8cf8ef43e7c7f841d2a776c56494c8a",
       "suggestions": [],
-      "lastModified": 1762205477700,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480168,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     },
     "public\\Zyris Logo.png": {
       "fileHash": "56eae5a033f28e82dbde9c519de26e3f05c4fc25ea8f5188ab98bb3443662b2b",
       "suggestions": [],
-      "lastModified": 1762205477701,
-      "model": "llama2",
-      "provider": "ollama"
+      "lastModified": 1762450480168,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
+    },
+    "utils\\cohort-loader.ts": {
+      "fileHash": "e3f49d7798535b0f9e9a12aa09046791bfca1efc1b86bc25fd8f15fdeb0b52d9",
+      "suggestions": [],
+      "lastModified": 1762450480036,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
+    },
+    "data\\cohort_definitions.json": {
+      "fileHash": "301f243d0f8264ebe622d4d9c644c9b57b0d35873a371e96cba614f69d80a06b",
+      "suggestions": [],
+      "lastModified": 1762450480152,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic"
     }
   }
 }

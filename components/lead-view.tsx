@@ -91,7 +91,13 @@ export interface LeadData {
 }
 
 interface LeadViewProps {
-  leadData: LeadData;
+  leadData: LeadData | null;
+  exclusionType?: "DSO" | "EDU" | null;
+  exclusionDetails?: {
+    dsoName?: string;
+    domain?: string;
+    reason?: string;
+  };
 }
 
 /**
@@ -168,12 +174,129 @@ function getPrimarySpecialty(specialties: string[]): string {
   return primarySpecialty || specialties[0] || "Not Available";
 }
 
-export default function LeadView({ leadData }: LeadViewProps) {
+export default function LeadView({
+  leadData,
+  exclusionType,
+  exclusionDetails,
+}: LeadViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [stateFilter, setStateFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [copySuccess, setCopySuccess] = useState(false);
   const [isInputExpanded, setIsInputExpanded] = useState(false);
+
+  // Handle excluded jobs (DSO/EDU)
+  if (exclusionType && !leadData) {
+    return (
+      <Card className="w-full max-w-5xl mx-auto">
+        <CardContent className="pt-6">
+          {/* Alert Card */}
+          <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="h-12 w-12 bg-red-500 rounded-full flex items-center justify-center">
+                  <X className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-red-900 mb-2">
+                  {exclusionType === "DSO"
+                    ? "DSO Detected"
+                    : "EDU Institution Detected"}
+                </h3>
+                <p className="text-red-800 text-lg font-medium mb-4">
+                  No scrape performed, manual research required
+                </p>
+                {exclusionDetails?.reason && (
+                  <p className="text-red-700 text-sm mb-2">
+                    {exclusionDetails.reason}
+                  </p>
+                )}
+                {exclusionDetails?.domain && (
+                  <p className="text-red-700 text-sm">
+                    <span className="font-semibold">Domain:</span>{" "}
+                    {exclusionDetails.domain}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Minimal Info Display */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 pb-2">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Minimal Information Available
+              </h2>
+              <Badge
+                variant="outline"
+                className="bg-red-500/10 text-red-700 border-red-300"
+              >
+                {exclusionType}
+              </Badge>
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="flex items-start gap-3">
+                <Building className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Organization Type
+                  </p>
+                  <p className="font-medium">
+                    {exclusionType === "DSO"
+                      ? exclusionDetails?.dsoName ||
+                        "Dental Service Organization"
+                      : "Educational Institution"}
+                  </p>
+                </div>
+              </div>
+
+              {exclusionDetails?.domain && (
+                <div className="flex items-start gap-3">
+                  <Globe className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Website</p>
+                    <a
+                      href={`https://${exclusionDetails.domain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-blue-600 hover:underline"
+                    >
+                      {exclusionDetails.domain}
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-700">
+                <strong>Note:</strong> This practice has been excluded from
+                automated enrichment.
+                {exclusionType === "DSO"
+                  ? " DSO-affiliated practices require manual research and verification."
+                  : " Educational institutions are not eligible for standard practice enrichment."}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If no leadData and no exclusion, show error
+  if (!leadData) {
+    return (
+      <Card className="w-full max-w-5xl mx-auto">
+        <CardContent className="pt-6">
+          <p className="text-red-600">No data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const {
     practiceName,

@@ -8,18 +8,18 @@
   },
   "analysis": {
     "summary": {
-      "filesAnalyzed": 109,
+      "filesAnalyzed": 111,
       "suggestions": 0,
       "categories": {},
-      "duration": 159
+      "duration": 212
     },
     "suggestions": [],
     "metadata": {
-      "timestamp": "2025-11-03T22:25:21.495Z",
-      "model": "llama2",
-      "provider": "ollama",
+      "timestamp": "2025-11-06T17:34:40.170Z",
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic",
       "mode": "full"
     }
   },
-  "generatedAt": "2025-11-03T22:25:21.643Z"
+  "generatedAt": "2025-11-06T17:34:40.303Z"
 }
