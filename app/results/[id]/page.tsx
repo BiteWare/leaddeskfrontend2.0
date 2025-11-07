@@ -125,7 +125,7 @@ export default function ResultsPage() {
   // Check if this is an excluded job (ID starts with "excluded_")
   const isExcludedJob = correlationId.startsWith("excluded_");
 
-  // Load excluded job from localStorage if applicable
+  // Load excluded job from localStorage if applicable (backward compatibility)
   useEffect(() => {
     if (isExcludedJob && typeof window !== "undefined") {
       const storedJob = localStorage.getItem(`excluded_job_${correlationId}`);
@@ -141,10 +141,8 @@ export default function ResultsPage() {
     }
   }, [correlationId, isExcludedJob]);
 
-  // Use the hook to fetch job data from database (skip if excluded job)
-  const { job, loading, error, refetch } = useJobData(
-    isExcludedJob ? "" : correlationId,
-  );
+  // Use the hook to fetch job data from database (always fetch, even for excluded jobs)
+  const { job, loading, error, refetch } = useJobData(correlationId);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -158,6 +156,32 @@ export default function ResultsPage() {
       status: job?.overall_job_status,
       hasResults: !!job?.scraper_worker_results_json,
     });
+
+    // Handle excluded jobs from database
+    if (job?.overall_job_status === "excluded") {
+      console.log("🚫 Excluded job detected from database:", job);
+
+      // Create excluded job object from database data
+      const excludedJobFromDB = {
+        id: job.correlation_id,
+        exclusionType:
+          job.cohort === "DSO"
+            ? "DSO"
+            : job.cohort === "Education"
+              ? "EDU"
+              : "GOV",
+        dsoName: job.cohort === "DSO" ? job.input_customer_name : undefined,
+        practiceName: job.input_customer_name || "Unknown Practice",
+        query:
+          `${job.input_customer_name} ${job.input_street_address || ""} ${job.input_city || ""} ${job.input_state || ""}`.trim(),
+        detectedDomain: job.url_worker_resulting_url || undefined,
+        reason: job.exclusion_reason || undefined,
+        timestamp: job.created_at || new Date().toISOString(),
+      };
+
+      setExcludedJob(excludedJobFromDB);
+      return;
+    }
 
     if (
       job?.overall_job_status === "scraper_worker_complete" &&

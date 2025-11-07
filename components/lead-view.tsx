@@ -152,6 +152,25 @@ function getPrimarySpecialty(specialties: string[]): string {
   return primarySpecialty || specialties[0] || "Not Available";
 }
 
+/**
+ * Cleans address by removing practice name prefix if present
+ * Example: "Absolute Dental 123 Main St" -> "123 Main St"
+ */
+function cleanAddress(address: string, practiceName: string): string {
+  if (!address || !practiceName) return address;
+
+  // If address starts with practice name, remove it
+  if (address.toLowerCase().startsWith(practiceName.toLowerCase())) {
+    // Remove the practice name and any following whitespace/commas
+    let cleaned = address.slice(practiceName.length).trim();
+    // Remove leading comma or space if present
+    cleaned = cleaned.replace(/^[,\s]+/, "");
+    return cleaned || address; // Return original if cleaning resulted in empty string
+  }
+
+  return address;
+}
+
 export default function LeadView({
   leadData,
   exclusionType,
@@ -297,15 +316,6 @@ export default function LeadView({
                 </CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary">{practiceSpecialty}</Badge>
-                  {cohort && (
-                    <Badge
-                      variant="outline"
-                      className={getCohortColorClasses(cohort)}
-                      title="Automatically classified cohort"
-                    >
-                      {cohort}
-                    </Badge>
-                  )}
                 </div>
               </div>
             </div>
@@ -470,7 +480,7 @@ export default function LeadView({
                                   Address:
                                 </span>
                                 <p className="text-foreground mt-1">
-                                  {practiceAddress}
+                                  {cleanAddress(practiceAddress, practiceName)}
                                 </p>
                                 {/* Show original input address for DSO/EDU/GOV cohorts */}
                                 {cohort &&
@@ -571,11 +581,11 @@ export default function LeadView({
                                 <span className="font-medium text-muted-foreground">
                                   Cohort:
                                 </span>
-                                <p className="text-foreground mt-1">
+                                <div className="text-foreground mt-1">
                                   <Badge variant="secondary">
                                     {cohort || "Not Available"}
                                   </Badge>
-                                </p>
+                                </div>
                               </div>
                               <Separator />
                               <div>

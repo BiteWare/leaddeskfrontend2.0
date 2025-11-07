@@ -46,7 +46,7 @@ export default function HomePage() {
       if (exclusionResult.isExcluded) {
         console.log("🚫 Exclusion detected:", exclusionResult);
 
-        // Create a mock "excluded" job and store locally
+        // Create a database entry for excluded job
         const excludedJobId = `excluded_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const excludedJob = {
           id: excludedJobId,
@@ -59,7 +59,46 @@ export default function HomePage() {
           timestamp: new Date().toISOString(),
         };
 
-        // Store in localStorage for retrieval on results page
+        // Save excluded job to database via API
+        try {
+          let accessToken = undefined;
+          if (user) {
+            const {
+              data: { session },
+            } = await import("@/utils/supabase-client").then((m) =>
+              m.supabase.auth.getSession(),
+            );
+            accessToken = session?.access_token;
+          }
+
+          const saveResponse = await fetch("/api/save-excluded-job", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken
+                ? { Authorization: `Bearer ${accessToken}` }
+                : {}),
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              correlation_id: excludedJobId,
+              practice_name: practiceName,
+              query,
+              exclusion_type: exclusionResult.exclusionType,
+              exclusion_reason: exclusionResult.reason,
+              detected_domain: exclusionResult.detectedDomain,
+              dso_name: exclusionResult.dsoName,
+            }),
+          });
+
+          if (!saveResponse.ok) {
+            console.error("Failed to save excluded job to database");
+          }
+        } catch (error) {
+          console.error("Error saving excluded job:", error);
+        }
+
+        // Also store in localStorage for backward compatibility
         if (typeof window !== "undefined") {
           localStorage.setItem(
             `excluded_job_${excludedJobId}`,

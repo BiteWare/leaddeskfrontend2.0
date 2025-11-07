@@ -204,6 +204,11 @@ export function JobsTable({
         variant: "secondary",
         icon: <Loader2 className="h-3 w-3 animate-spin" />,
       },
+      excluded: {
+        label: "Exclusion List",
+        variant: "outline",
+        icon: <XCircle className="h-3 w-3" />,
+      },
     };
 
     const config = statusMap[status || "unknown"] || {
@@ -221,7 +226,7 @@ export function JobsTable({
   };
 
   const isClickable = (status: string | null) => {
-    return status === "scraper_worker_complete";
+    return status === "scraper_worker_complete" || status === "excluded";
   };
 
   const formatDate = (dateString: string | null) => {
