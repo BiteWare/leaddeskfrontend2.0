@@ -92,11 +92,13 @@ export interface LeadData {
 
 interface LeadViewProps {
   leadData: LeadData | null;
-  exclusionType?: "DSO" | "EDU" | null;
+  exclusionType?: "DSO" | "EDU" | "GOV" | null;
   exclusionDetails?: {
     dsoName?: string;
     domain?: string;
     reason?: string;
+    practiceName?: string;
+    query?: string;
   };
 }
 
@@ -185,110 +187,42 @@ export default function LeadView({
   const [copySuccess, setCopySuccess] = useState(false);
   const [isInputExpanded, setIsInputExpanded] = useState(false);
 
-  // Handle excluded jobs (DSO/EDU)
-  if (exclusionType && !leadData) {
-    return (
-      <Card className="w-full max-w-5xl mx-auto">
-        <CardContent className="pt-6">
-          {/* Alert Card */}
-          <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6 mb-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="h-12 w-12 bg-red-500 rounded-full flex items-center justify-center">
-                  <X className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-red-900 mb-2">
-                  {exclusionType === "DSO"
-                    ? "DSO Detected"
-                    : "EDU Institution Detected"}
-                </h3>
-                <p className="text-red-800 text-lg font-medium mb-4">
-                  No scrape performed, manual research required
-                </p>
-                {exclusionDetails?.reason && (
-                  <p className="text-red-700 text-sm mb-2">
-                    {exclusionDetails.reason}
-                  </p>
-                )}
-                {exclusionDetails?.domain && (
-                  <p className="text-red-700 text-sm">
-                    <span className="font-semibold">Domain:</span>{" "}
-                    {exclusionDetails.domain}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+  // Handle excluded jobs - create minimal lead data for display
+  const displayData: LeadData =
+    leadData ||
+    (exclusionType
+      ? {
+          practiceName:
+            exclusionDetails?.practiceName ||
+            exclusionDetails?.dsoName ||
+            "Unknown Practice",
+          practiceAddress: exclusionDetails?.query || "Address not available",
+          practiceWebsite: exclusionDetails?.domain,
+          practicePhone: undefined,
+          practiceEmail: undefined,
+          practiceSpecialty:
+            exclusionType === "DSO"
+              ? "Dental Service Organization"
+              : exclusionType === "EDU"
+                ? "Educational Institution"
+                : "Government Institution",
+          numberOfDentists: 0,
+          numberOfHygienists: 0,
+          staff: [],
+          locations: [],
+          specialties: [],
+          resultingUrl: exclusionDetails?.domain,
+          personInCharge: undefined,
+          worksMultipleLocations: false,
+          scrapeNotes: undefined,
+          cohort: exclusionType,
+          originalInput: undefined,
+          rawJson: undefined,
+        }
+      : null);
 
-          {/* Minimal Info Display */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 pb-2">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Minimal Information Available
-              </h2>
-              <Badge
-                variant="outline"
-                className="bg-red-500/10 text-red-700 border-red-300"
-              >
-                {exclusionType}
-              </Badge>
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="flex items-start gap-3">
-                <Building className="h-5 w-5 text-gray-500 mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Organization Type
-                  </p>
-                  <p className="font-medium">
-                    {exclusionType === "DSO"
-                      ? exclusionDetails?.dsoName ||
-                        "Dental Service Organization"
-                      : "Educational Institution"}
-                  </p>
-                </div>
-              </div>
-
-              {exclusionDetails?.domain && (
-                <div className="flex items-start gap-3">
-                  <Globe className="h-5 w-5 text-gray-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Website</p>
-                    <a
-                      href={`https://${exclusionDetails.domain}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      {exclusionDetails.domain}
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <p className="text-sm text-gray-700">
-                <strong>Note:</strong> This practice has been excluded from
-                automated enrichment.
-                {exclusionType === "DSO"
-                  ? " DSO-affiliated practices require manual research and verification."
-                  : " Educational institutions are not eligible for standard practice enrichment."}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // If no leadData and no exclusion, show error
-  if (!leadData) {
+  // If no data at all, show error
+  if (!displayData) {
     return (
       <Card className="w-full max-w-5xl mx-auto">
         <CardContent className="pt-6">
@@ -317,7 +251,7 @@ export default function LeadView({
     cohort,
     originalInput,
     rawJson,
-  } = leadData;
+  } = displayData;
 
   // Filter data based on search and filters
   const filteredStaff = useMemo(() => {
@@ -413,6 +347,32 @@ export default function LeadView({
             </div>
           </div>
         </CardHeader>
+
+        {/* Exclusion Banner */}
+        {exclusionType && (
+          <div className="mx-6 mt-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded">
+            <div className="flex items-start gap-3">
+              <X className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 mb-1">
+                  {exclusionType === "DSO"
+                    ? "DSO Detected"
+                    : exclusionType === "EDU"
+                      ? "Educational Institution Detected"
+                      : "Government Institution Detected"}
+                </h3>
+                <p className="text-sm text-amber-800">
+                  No automated scrape performed. Manual research required.
+                </p>
+                {exclusionDetails?.reason && (
+                  <p className="text-xs text-amber-700 mt-2">
+                    {exclusionDetails.reason}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Flexible Height Container with Tabs */}
         <div className="flex-1 flex flex-col min-h-0">

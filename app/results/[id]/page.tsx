@@ -232,6 +232,8 @@ export default function ResultsPage() {
                   dsoName: excludedJob.dsoName,
                   domain: excludedJob.detectedDomain,
                   reason: excludedJob.reason,
+                  practiceName: excludedJob.practiceName,
+                  query: excludedJob.query,
                 }}
               />
             </div>
