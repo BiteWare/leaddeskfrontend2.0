@@ -122,6 +122,30 @@ export function JobsTable({
       );
     }
 
+    // Show cohort type for cancelled/stopped jobs if they are DSO, EDU, or GOV
+    if (status === "cancelled" && job.cohort) {
+      const cohortType = job.cohort.toUpperCase();
+      if (
+        ["DSO", "EDU", "EDUCATION", "GOV", "GOVERNMENT"].includes(cohortType)
+      ) {
+        const displayCohort =
+          cohortType === "EDUCATION"
+            ? "EDU"
+            : cohortType === "GOVERNMENT"
+              ? "GOV"
+              : cohortType;
+        return (
+          <Badge
+            variant="outline"
+            className="flex items-center gap-1 w-fit bg-amber-500/10 text-amber-700 border-amber-300"
+          >
+            <XCircle className="h-3 w-3" />
+            {displayCohort}
+          </Badge>
+        );
+      }
+    }
+
     const statusMap: Record<
       string,
       {

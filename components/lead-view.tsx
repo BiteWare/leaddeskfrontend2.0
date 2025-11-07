@@ -536,6 +536,21 @@ export default function LeadView({
                                 <p className="text-foreground mt-1">
                                   {practiceAddress}
                                 </p>
+                                {/* Show original input address for DSO/EDU/GOV cohorts */}
+                                {cohort &&
+                                  ["DSO", "Education", "Government"].includes(
+                                    cohort,
+                                  ) &&
+                                  originalInput && (
+                                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded">
+                                      <p className="text-xs font-medium text-amber-800 mb-1">
+                                        Original Submitted Address:
+                                      </p>
+                                      <p className="text-sm text-amber-900">
+                                        {originalInput}
+                                      </p>
+                                    </div>
+                                  )}
                               </div>
                               <Separator />
                               <div>
