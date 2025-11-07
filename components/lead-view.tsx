@@ -126,30 +126,6 @@ function getCohortColorClasses(cohort: string | undefined): string {
 }
 
 /**
- * Determines practice type based on specialties
- * Returns "General Practice" if general dentistry keywords found, otherwise "Specialty Practice"
- */
-function getPracticeType(specialties: string[]): string {
-  if (!specialties || specialties.length === 0) return "Not Available";
-
-  const generalKeywords = [
-    "general dentistry",
-    "general",
-    "family dentistry",
-    "comprehensive care",
-    "preventive care",
-  ];
-
-  const hasGeneral = specialties.some((specialty) =>
-    generalKeywords.some((keyword) =>
-      specialty.toLowerCase().includes(keyword),
-    ),
-  );
-
-  return hasGeneral ? "General Practice" : "Specialty Practice";
-}
-
-/**
  * Extracts primary specialty from the specialties list
  * Returns the first specialty that isn't "general dentistry" or similar
  */
@@ -593,11 +569,11 @@ export default function LeadView({
                             <CardContent className="space-y-3">
                               <div>
                                 <span className="font-medium text-muted-foreground">
-                                  Practice Type:
+                                  Cohort:
                                 </span>
                                 <p className="text-foreground mt-1">
                                   <Badge variant="secondary">
-                                    {getPracticeType(specialties)}
+                                    {cohort || "Not Available"}
                                   </Badge>
                                 </p>
                               </div>
