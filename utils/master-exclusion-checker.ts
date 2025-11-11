@@ -5,9 +5,9 @@
  * Uses master-exclusion.json as the single source of truth for all exclusion rules.
  */
 
-import masterExclusionConfig from '@/data/master-exclusion.json';
+import masterExclusionConfig from "@/data/master-exclusion.json";
 
-export type ExclusionCategory = 'DSO' | 'EDU' | 'GOV' | 'CLINIC';
+export type ExclusionCategory = "DSO" | "EDU" | "GOV" | "CLINIC";
 
 export interface MasterExclusionResult {
   isExcluded: boolean;
@@ -23,21 +23,21 @@ export interface MasterExclusionResult {
  * Removes protocol, www, trailing slashes, and ports
  */
 function normalizeDomain(input: string): string {
-  if (!input) return '';
+  if (!input) return "";
 
   let domain = input.toLowerCase().trim();
 
   // Remove protocol
-  domain = domain.replace(/^https?:\/\//, '');
+  domain = domain.replace(/^https?:\/\//, "");
 
   // Remove www
-  domain = domain.replace(/^www\./, '');
+  domain = domain.replace(/^www\./, "");
 
   // Remove port
-  domain = domain.split(':')[0];
+  domain = domain.split(":")[0];
 
   // Remove path and query params
-  domain = domain.split('/')[0].split('?')[0];
+  domain = domain.split("/")[0].split("?")[0];
 
   return domain;
 }
@@ -47,18 +47,21 @@ function normalizeDomain(input: string): string {
  */
 function extractTLD(domain: string): string {
   const normalized = normalizeDomain(domain);
-  const parts = normalized.split('.');
+  const parts = normalized.split(".");
 
-  if (parts.length < 2) return '';
+  if (parts.length < 2) return "";
 
   // Return .tld format (e.g., ".edu", ".gov")
-  return '.' + parts[parts.length - 1];
+  return "." + parts[parts.length - 1];
 }
 
 /**
  * Checks if a domain or practice name contains clinic-related keywords
  */
-function checkClinicKeywords(practiceName: string, domain: string): { matched: boolean; keyword?: string } {
+function checkClinicKeywords(
+  practiceName: string,
+  domain: string,
+): { matched: boolean; keyword?: string } {
   const { clinic } = masterExclusionConfig.categories;
 
   if (!clinic.enabled) {
@@ -79,7 +82,10 @@ function checkClinicKeywords(practiceName: string, domain: string): { matched: b
 /**
  * Checks if a domain or practice name contains educational institution keywords
  */
-function checkEducationalKeywords(practiceName: string, domain: string): { matched: boolean; keyword?: string } {
+function checkEducationalKeywords(
+  practiceName: string,
+  domain: string,
+): { matched: boolean; keyword?: string } {
   const { educational } = masterExclusionConfig.categories;
 
   if (!educational.enabled) {
@@ -98,9 +104,36 @@ function checkEducationalKeywords(practiceName: string, domain: string): { match
 }
 
 /**
+ * Checks if a domain or practice name contains government facility keywords
+ */
+function checkGovernmentKeywords(
+  practiceName: string,
+  domain: string,
+): { matched: boolean; keyword?: string } {
+  const { government } = masterExclusionConfig.categories;
+
+  if (!government.enabled || !government.matchingRules?.keywordMatch) {
+    return { matched: false };
+  }
+
+  const combinedText = `${practiceName} ${domain}`.toLowerCase();
+
+  for (const keyword of government.keywords || []) {
+    if (combinedText.includes(keyword.toLowerCase())) {
+      return { matched: true, keyword };
+    }
+  }
+
+  return { matched: false };
+}
+
+/**
  * Checks if a domain belongs to a DSO organization
  */
-function checkDSO(practiceName: string, domain: string): { matched: boolean; dsoName?: string; matchedDomain?: string } {
+function checkDSO(
+  practiceName: string,
+  domain: string,
+): { matched: boolean; dsoName?: string; matchedDomain?: string } {
   const { dso } = masterExclusionConfig.categories;
 
   if (!dso.enabled) {
@@ -127,6 +160,16 @@ function checkDSO(practiceName: string, domain: string): { matched: boolean; dso
       if (normalizedPracticeName.includes(normalizedOrgName)) {
         return { matched: true, dsoName: org.name };
       }
+
+      // Check aliases if they exist
+      if (org.aliases && Array.isArray(org.aliases)) {
+        for (const alias of org.aliases) {
+          const normalizedAlias = alias.toLowerCase();
+          if (normalizedPracticeName.includes(normalizedAlias)) {
+            return { matched: true, dsoName: org.name };
+          }
+        }
+      }
     }
   }
 
@@ -136,7 +179,11 @@ function checkDSO(practiceName: string, domain: string): { matched: boolean; dso
 /**
  * Checks if a domain has an excluded TLD (.edu, .gov, .mil)
  */
-function checkTLD(domain: string): { matched: boolean; tld?: string; category?: ExclusionCategory } {
+function checkTLD(domain: string): {
+  matched: boolean;
+  tld?: string;
+  category?: ExclusionCategory;
+} {
   const tld = extractTLD(domain);
 
   if (!tld) {
@@ -146,13 +193,13 @@ function checkTLD(domain: string): { matched: boolean; tld?: string; category?: 
   // Check educational TLDs
   const { educational } = masterExclusionConfig.categories;
   if (educational.enabled && educational.tlds.includes(tld)) {
-    return { matched: true, tld, category: 'EDU' };
+    return { matched: true, tld, category: "EDU" };
   }
 
   // Check government TLDs
   const { government } = masterExclusionConfig.categories;
   if (government.enabled && government.tlds.includes(tld)) {
-    return { matched: true, tld, category: 'GOV' };
+    return { matched: true, tld, category: "GOV" };
   }
 
   return { matched: false };
@@ -163,9 +210,10 @@ function checkTLD(domain: string): { matched: boolean; tld?: string; category?: 
  *
  * Priority order:
  * 1. TLD-based exclusions (.edu, .gov, .mil) - highest priority
- * 2. DSO exclusions
- * 3. Educational keyword exclusions
- * 4. Clinic keyword exclusions
+ * 2. DSO exclusions (with alias matching)
+ * 3. Government keyword exclusions (VA, military facilities)
+ * 4. Educational keyword exclusions
+ * 5. Clinic keyword exclusions
  *
  * @param practiceName - The name of the dental practice
  * @param domain - The domain/URL to check (can be full URL or just domain)
@@ -173,40 +221,39 @@ function checkTLD(domain: string): { matched: boolean; tld?: string; category?: 
  */
 export function checkMasterExclusion(
   practiceName: string,
-  domain: string
+  domain: string,
 ): MasterExclusionResult {
-
   if (!practiceName && !domain) {
     return {
       isExcluded: false,
       category: null,
-      reason: 'No data provided for exclusion check'
+      reason: "No data provided for exclusion check",
     };
   }
 
   const normalizedDomain = normalizeDomain(domain);
-  const normalizedPracticeName = practiceName || '';
+  const normalizedPracticeName = practiceName || "";
 
   // PRIORITY 1: Check TLD-based exclusions (.edu, .gov, .mil)
   const tldCheck = checkTLD(normalizedDomain);
   if (tldCheck.matched) {
-    if (tldCheck.category === 'EDU') {
+    if (tldCheck.category === "EDU") {
       return {
         isExcluded: true,
-        category: 'EDU',
+        category: "EDU",
         reason: `Educational institution (.edu domain)`,
         matchedPattern: tldCheck.tld,
-        detectedDomain: normalizedDomain
+        detectedDomain: normalizedDomain,
       };
     }
 
-    if (tldCheck.category === 'GOV') {
+    if (tldCheck.category === "GOV") {
       return {
         isExcluded: true,
-        category: 'GOV',
+        category: "GOV",
         reason: `Government entity (${tldCheck.tld} domain)`,
         matchedPattern: tldCheck.tld,
-        detectedDomain: normalizedDomain
+        detectedDomain: normalizedDomain,
       };
     }
   }
@@ -216,35 +263,56 @@ export function checkMasterExclusion(
   if (dsoCheck.matched) {
     return {
       isExcluded: true,
-      category: 'DSO',
+      category: "DSO",
       reason: `DSO organization: ${dsoCheck.dsoName}`,
       matchedPattern: dsoCheck.matchedDomain,
       dsoName: dsoCheck.dsoName,
-      detectedDomain: normalizedDomain
+      detectedDomain: normalizedDomain,
     };
   }
 
-  // PRIORITY 3: Check educational keywords (catches dental schools without .edu domains)
-  const eduKeywordCheck = checkEducationalKeywords(normalizedPracticeName, normalizedDomain);
+  // PRIORITY 3: Check government keywords (catches VA, military facilities without .gov/.mil domains)
+  const govKeywordCheck = checkGovernmentKeywords(
+    normalizedPracticeName,
+    normalizedDomain,
+  );
+  if (govKeywordCheck.matched) {
+    return {
+      isExcluded: true,
+      category: "GOV",
+      reason: `Government facility (matched keyword: "${govKeywordCheck.keyword}")`,
+      matchedPattern: govKeywordCheck.keyword,
+      detectedDomain: normalizedDomain,
+    };
+  }
+
+  // PRIORITY 4: Check educational keywords (catches dental schools without .edu domains)
+  const eduKeywordCheck = checkEducationalKeywords(
+    normalizedPracticeName,
+    normalizedDomain,
+  );
   if (eduKeywordCheck.matched) {
     return {
       isExcluded: true,
-      category: 'EDU',
+      category: "EDU",
       reason: `Educational institution (matched keyword: "${eduKeywordCheck.keyword}")`,
       matchedPattern: eduKeywordCheck.keyword,
-      detectedDomain: normalizedDomain
+      detectedDomain: normalizedDomain,
     };
   }
 
-  // PRIORITY 4: Check clinic keywords
-  const clinicCheck = checkClinicKeywords(normalizedPracticeName, normalizedDomain);
+  // PRIORITY 5: Check clinic keywords
+  const clinicCheck = checkClinicKeywords(
+    normalizedPracticeName,
+    normalizedDomain,
+  );
   if (clinicCheck.matched) {
     return {
       isExcluded: true,
-      category: 'CLINIC',
+      category: "CLINIC",
       reason: `Community clinic or health center (matched keyword: "${clinicCheck.keyword}")`,
       matchedPattern: clinicCheck.keyword,
-      detectedDomain: normalizedDomain
+      detectedDomain: normalizedDomain,
     };
   }
 
@@ -252,8 +320,8 @@ export function checkMasterExclusion(
   return {
     isExcluded: false,
     category: null,
-    reason: 'Practice passed all exclusion checks',
-    detectedDomain: normalizedDomain
+    reason: "Practice passed all exclusion checks",
+    detectedDomain: normalizedDomain,
   };
 }
 
@@ -269,7 +337,7 @@ export function hasExclusionPattern(domain: string): boolean {
   const { educational, government } = masterExclusionConfig.categories;
   const excludedTlds = [
     ...(educational.enabled ? educational.tlds : []),
-    ...(government.enabled ? government.tlds : [])
+    ...(government.enabled ? government.tlds : []),
   ];
 
   return excludedTlds.includes(tld);

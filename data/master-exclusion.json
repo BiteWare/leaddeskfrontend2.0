@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "lastUpdated": "2025-11-11T00:00:00Z",
   "description": "Master exclusion configuration for filtering domains before job submission. This is the single source of truth for all exclusion rules.",
   "categories": {
@@ -13,87 +13,158 @@
       "organizations": [
         {
           "name": "Heartland Dental",
-          "domains": ["heartland.com", "heartlanddental.com"]
+          "domains": ["heartland.com", "heartlanddental.com"],
+          "aliases": ["heartland dental"]
         },
         {
           "name": "The Aspen Group",
-          "domains": ["teamtag.com", "aspendental.com"]
+          "domains": ["teamtag.com", "aspendental.com"],
+          "aliases": ["aspen dental", "aspen group"]
         },
         {
           "name": "PDS Health",
-          "domains": ["pdshealth.com"]
+          "domains": ["pdshealth.com"],
+          "aliases": ["pacific dental", "pds"]
         },
         {
           "name": "Smile Brands",
-          "domains": ["smilebrands.com"]
+          "domains": ["smilebrands.com"],
+          "aliases": ["smile brands"]
         },
         {
           "name": "MB2 Dental",
-          "domains": ["mb2dental.com"]
+          "domains": ["mb2dental.com"],
+          "aliases": ["mb2"]
         },
         {
           "name": "Sonrava Health",
-          "domains": ["sonrava.com"]
+          "domains": ["sonrava.com"],
+          "aliases": ["sonrava"]
         },
         {
           "name": "Dental Care Alliance",
-          "domains": ["dentalcarealliance.net"]
+          "domains": ["dentalcarealliance.net"],
+          "aliases": ["dental care alliance", "dca dental"]
         },
         {
           "name": "Great Expressions Dental Centers",
-          "domains": ["greatexpressions.com"]
+          "domains": ["greatexpressions.com"],
+          "aliases": ["great expressions"]
         },
         {
           "name": "Affordable Care",
-          "domains": ["affordablecare.com"]
+          "domains": ["affordablecare.com"],
+          "aliases": ["affordable care llc"]
         },
         {
           "name": "InterDent",
-          "domains": ["interdent.com"]
+          "domains": ["interdent.com"],
+          "aliases": ["interdent"]
         },
         {
           "name": "DECA Dental Group",
-          "domains": ["decadental.com"]
+          "domains": ["decadental.com"],
+          "aliases": ["deca dental"]
         },
         {
           "name": "Dental365",
-          "domains": ["godental365.com"]
+          "domains": ["godental365.com"],
+          "aliases": ["dental365", "dental 365"]
         },
         {
           "name": "Guardian Dentistry Partners",
-          "domains": ["guardiandentistry.com"]
+          "domains": ["guardiandentistry.com"],
+          "aliases": ["guardian dentistry"]
         },
         {
           "name": "North American Dental Group",
-          "domains": ["nadentalgroup.com"]
+          "domains": ["nadentalgroup.com"],
+          "aliases": ["nadg", "north american dental"]
         },
         {
           "name": "Mortenson Dental Partners",
-          "domains": ["mortensondentalpartners.com"]
+          "domains": ["mortensondentalpartners.com"],
+          "aliases": ["mortenson dental"]
         },
         {
           "name": "42 North Dental",
-          "domains": ["42northdental.com"]
+          "domains": ["42northdental.com"],
+          "aliases": ["42 north", "forty two north"]
         },
         {
           "name": "Sage Dental",
-          "domains": ["mysagedental.com"]
+          "domains": ["mysagedental.com"],
+          "aliases": ["sage dental"]
         },
         {
           "name": "D4C Dental Brands",
-          "domains": ["d4cdentalbrands.com"]
+          "domains": ["d4cdentalbrands.com"],
+          "aliases": ["d4c dental"]
         },
         {
           "name": "U.S. Oral Surgery Management",
-          "domains": ["usosm.com"]
+          "domains": ["usosm.com"],
+          "aliases": ["usosm", "us oral surgery"]
         },
         {
           "name": "Specialty Dental Brands",
-          "domains": ["specialtydentalbrands.com"]
+          "domains": ["specialtydentalbrands.com"],
+          "aliases": ["specialty dental brands"]
         },
         {
           "name": "Absolute Dental",
-          "domains": ["absolutedental.com", "absolutedentalcare.com"]
+          "domains": ["absolutedental.com", "absolutedentalcare.com"],
+          "aliases": ["absolute dental"]
+        },
+        {
+          "name": "Western Dental",
+          "domains": ["westerndental.com"],
+          "aliases": ["western dental"]
+        },
+        {
+          "name": "Tend",
+          "domains": ["tenddental.com"],
+          "aliases": ["tend dental"]
+        },
+        {
+          "name": "Affordable Dentures & Implants",
+          "domains": ["affordabledentures.com"],
+          "aliases": ["affordable dentures"]
+        },
+        {
+          "name": "Kool Smiles",
+          "domains": ["koolsmiles.com"],
+          "aliases": ["kool smiles"]
+        },
+        {
+          "name": "Small Smiles",
+          "domains": ["smallsmiles.com"],
+          "aliases": ["small smiles"]
+        },
+        {
+          "name": "Bright Now! Dental",
+          "domains": ["brightnow.com"],
+          "aliases": ["bright now dental", "brightnow"]
+        },
+        {
+          "name": "Perfect Teeth",
+          "domains": ["perfectteeth.com"],
+          "aliases": ["perfect teeth"]
+        },
+        {
+          "name": "Coast Dental",
+          "domains": ["coastdental.com"],
+          "aliases": ["coast dental"]
+        },
+        {
+          "name": "Castle Dental",
+          "domains": ["castledental.com"],
+          "aliases": ["castle dental"]
+        },
+        {
+          "name": "Comfort Dental",
+          "domains": ["comfortdental.com"],
+          "aliases": ["comfort dental"]
         }
       ]
     },
@@ -114,10 +185,12 @@
         "dental hygiene program",
         "hygienist school",
         "dental hygiene school",
+        "dental hygiene college",
         "continuing education",
         "extended learning",
         "professional development",
         "university dental",
+        "college dental",
         "teaching clinic",
         "dental education",
         "oral health sciences",
@@ -125,17 +198,71 @@
         "academic dental",
         "dental residency program",
         "postgraduate dental",
-        "dental training center"
+        "dental training center",
+        "career center",
+        "technical center",
+        "vocational center",
+        "career and technical",
+        "vocational school",
+        "vocational education",
+        "technical school",
+        "tech center",
+        "vo-tech",
+        "votech",
+        "community college dental",
+        "junior college dental",
+        "student dental clinic",
+        "dental assistant program",
+        "dental assisting school",
+        "dental lab technology",
+        "dental technology program",
+        "dental clinic university",
+        "dental clinic college"
       ]
     },
     "government": {
       "enabled": true,
       "description": "Government entities and facilities",
       "matchingRules": {
-        "tldMatch": true
+        "tldMatch": true,
+        "keywordMatch": true
       },
       "tlds": [".gov", ".mil"],
-      "keywords": []
+      "keywords": [
+        "veterans affairs",
+        "va medical",
+        "va dental",
+        "va hospital",
+        "va clinic",
+        "va health",
+        "va healthcare",
+        "department of veterans",
+        "dept of veterans",
+        "veterans administration",
+        "veterans hospital",
+        "veterans health",
+        "military dental",
+        "naval dental",
+        "army dental",
+        "air force dental",
+        "marine dental",
+        "marine corps dental",
+        "coast guard dental",
+        "federal dental",
+        "government dental",
+        "public health service",
+        "indian health service",
+        "ihs dental",
+        "tricare dental",
+        "federal health",
+        "national guard dental",
+        "defense health",
+        "military hospital",
+        "naval hospital",
+        "army hospital",
+        "air force hospital",
+        "military base dental"
+      ]
     },
     "clinic": {
       "enabled": true,
@@ -144,29 +271,43 @@
         "keywordMatch": true
       },
       "keywords": [
-        "clinic",
-        "community health",
+        "community health center",
         "community dental",
+        "community health",
         "health center",
         "dental foundation",
         "foundation dental",
         "free clinic",
+        "free dental",
         "dental care center",
         "public health dental",
         "non-profit dental",
         "nonprofit dental",
         "charitable dental",
+        "charity dental",
         "mission dental",
         "mobile dental",
         "dental van",
-        "outreach dental"
+        "outreach dental",
+        "dental outreach",
+        "low income dental",
+        "sliding scale dental",
+        "donated dental",
+        "volunteer dental",
+        "pro bono dental",
+        "safety net dental",
+        "federally qualified health center",
+        "fqhc dental",
+        "rural health",
+        "migrant health",
+        "homeless dental"
       ]
     }
   },
   "notes": [
-    "DSO exclusions: All corporate dental organizations are excluded",
-    ".edu exclusions: Catches ALL .edu domains to exclude dental schools, hygienist schools, extended learning, university clinics, etc.",
-    ".gov/.mil exclusions: All government and military facilities",
-    "Clinic exclusions: Community health centers, non-profit facilities, mobile clinics"
+    "DSO exclusions: All major corporate dental organizations are excluded with aliases for name variations",
+    ".edu exclusions: Catches ALL .edu domains plus vocational/technical schools and dental assistant programs",
+    ".gov/.mil exclusions: All government and military facilities including VA, IHS, and military branches",
+    "Clinic exclusions: Community health centers, FQHC, non-profit facilities, mobile clinics, and charitable programs"
   ]
 }
