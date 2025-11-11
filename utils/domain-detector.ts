@@ -1,13 +1,19 @@
 /**
  * Domain Detector Utility
  *
- * Detects DSO and EDU domains from user input before backend submission.
+ * Detects DSO, EDU, GOV, and CLINIC domains from user input before backend submission.
  * Prevents unnecessary API calls for excluded practice types.
+ *
+ * Now uses master-exclusion.json as the single source of truth for all exclusion rules.
  */
 
-import { isDSO, getDSOName } from "./dso-check";
+import {
+  checkMasterExclusion,
+  hasExclusionPattern as hasMasterExclusionPattern,
+  type ExclusionCategory,
+} from "./master-exclusion-checker";
 
-export type ExclusionType = "DSO" | "EDU" | null;
+export type ExclusionType = "DSO" | "EDU" | "GOV" | "CLINIC" | null;
 
 export interface DomainDetectionResult {
   isExcluded: boolean;
@@ -15,6 +21,7 @@ export interface DomainDetectionResult {
   dsoName?: string;
   detectedDomain?: string;
   reason?: string;
+  matchedPattern?: string;
 }
 
 /**
@@ -49,7 +56,10 @@ export function extractDomain(input: string): string | null {
       const withoutProtocol = trimmed.replace(/^(https?:\/\/)/, "");
 
       // Extract just the domain (remove path, query, hash)
-      const domainPart = withoutProtocol.split("/")[0].split("?")[0].split("#")[0];
+      const domainPart = withoutProtocol
+        .split("/")[0]
+        .split("?")[0]
+        .split("#")[0];
 
       // Basic domain validation (has at least one dot and valid characters)
       if (/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domainPart)) {
@@ -63,7 +73,6 @@ export function extractDomain(input: string): string | null {
     if (match && match[1]) {
       return match[1].toLowerCase();
     }
-
   } catch (error) {
     // URL parsing failed, continue to return null
     console.log("Domain extraction failed:", error);
@@ -75,6 +84,7 @@ export function extractDomain(input: string): string | null {
 /**
  * Checks if a domain is an educational institution (.edu TLD)
  *
+ * @deprecated Use checkMasterExclusion() instead for comprehensive exclusion checking
  * @param domain - Domain to check
  * @returns True if domain ends with .edu
  */
@@ -86,8 +96,14 @@ export function isEDUDomain(domain: string): boolean {
 }
 
 /**
- * Detects if user input should be excluded (DSO or EDU)
+ * Detects if user input should be excluded (DSO, EDU, GOV, or CLINIC)
  * Run this BEFORE submitting to backend to prevent unnecessary API calls
+ *
+ * Uses master-exclusion.json for comprehensive exclusion checking including:
+ * - DSO organizations
+ * - Educational institutions (.edu domains + keywords)
+ * - Government entities (.gov, .mil domains)
+ * - Community clinics and health centers
  *
  * @param practiceName - Practice name from user input
  * @param input - Full user input (may contain domain/URL)
@@ -98,9 +114,21 @@ export function isEDUDomain(domain: string): boolean {
  * detectExclusion("Heartland Dental", "heartlanddental.com")
  * // { isExcluded: true, exclusionType: "DSO", dsoName: "Heartland Dental", ... }
  *
- * // EDU detection
+ * // EDU detection (TLD)
  * detectExclusion("Harvard Dental", "harvard.edu")
  * // { isExcluded: true, exclusionType: "EDU", ... }
+ *
+ * // EDU detection (keyword)
+ * detectExclusion("UCLA School of Dentistry", "ucla.com")
+ * // { isExcluded: true, exclusionType: "EDU", matchedPattern: "school of dentistry", ... }
+ *
+ * // GOV detection
+ * detectExclusion("VA Dental Clinic", "va.gov")
+ * // { isExcluded: true, exclusionType: "GOV", ... }
+ *
+ * // CLINIC detection
+ * detectExclusion("Community Health Center", "chcdental.org")
+ * // { isExcluded: true, exclusionType: "CLINIC", matchedPattern: "community health", ... }
  *
  * // Normal practice
  * detectExclusion("Smith Family Dental", "smithdental.com")
@@ -108,45 +136,28 @@ export function isEDUDomain(domain: string): boolean {
  */
 export function detectExclusion(
   practiceName: string,
-  input: string
+  input: string,
 ): DomainDetectionResult {
-  const domain = extractDomain(input);
+  const domain = extractDomain(input) || input;
 
-  // Check for EDU domain first (simple TLD check)
-  if (domain && isEDUDomain(domain)) {
-    return {
-      isExcluded: true,
-      exclusionType: "EDU",
-      detectedDomain: domain,
-      reason: "Educational institution domain detected (.edu)",
-    };
-  }
+  // Use master exclusion checker for comprehensive validation
+  const result = checkMasterExclusion(practiceName, domain);
 
-  // Check for DSO using existing DSO detection logic
-  if (isDSO(practiceName, domain || "")) {
-    const dsoName = getDSOName(practiceName, domain || "");
-    return {
-      isExcluded: true,
-      exclusionType: "DSO",
-      dsoName,
-      detectedDomain: domain || undefined,
-      reason: dsoName
-        ? `Practice identified as ${dsoName}`
-        : "DSO organization detected",
-    };
-  }
-
-  // Not excluded
   return {
-    isExcluded: false,
-    exclusionType: null,
-    detectedDomain: domain || undefined,
+    isExcluded: result.isExcluded,
+    exclusionType: result.category,
+    dsoName: result.dsoName,
+    detectedDomain: result.detectedDomain,
+    reason: result.reason,
+    matchedPattern: result.matchedPattern,
   };
 }
 
 /**
  * Quick check if input contains obvious exclusion patterns
  * Useful for early validation without full parsing
+ *
+ * Now uses master exclusion system for consistent pattern matching
  *
  * @param input - User input to check
  * @returns True if input appears to be excluded
@@ -156,21 +167,6 @@ export function hasExclusionPattern(input: string): boolean {
     return false;
   }
 
-  const lower = input.toLowerCase();
-
-  // Check for .edu TLD
-  if (lower.includes(".edu")) {
-    return true;
-  }
-
-  // Check for common DSO keywords in domain
-  const dsoKeywords = [
-    "heartland",
-    "aspen",
-    "pdshealth",
-    "smilebrands",
-    "mb2dental",
-  ];
-
-  return dsoKeywords.some((keyword) => lower.includes(keyword));
+  // Use master exclusion checker's quick pattern check
+  return hasMasterExclusionPattern(input);
 }

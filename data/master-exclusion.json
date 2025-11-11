@@ -1,0 +1,172 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-11-11T00:00:00Z",
+  "description": "Master exclusion configuration for filtering domains before job submission. This is the single source of truth for all exclusion rules.",
+  "categories": {
+    "dso": {
+      "enabled": true,
+      "description": "Dental Service Organizations - corporate dental groups",
+      "matchingRules": {
+        "domainMatch": true,
+        "nameMatch": true
+      },
+      "organizations": [
+        {
+          "name": "Heartland Dental",
+          "domains": ["heartland.com", "heartlanddental.com"]
+        },
+        {
+          "name": "The Aspen Group",
+          "domains": ["teamtag.com", "aspendental.com"]
+        },
+        {
+          "name": "PDS Health",
+          "domains": ["pdshealth.com"]
+        },
+        {
+          "name": "Smile Brands",
+          "domains": ["smilebrands.com"]
+        },
+        {
+          "name": "MB2 Dental",
+          "domains": ["mb2dental.com"]
+        },
+        {
+          "name": "Sonrava Health",
+          "domains": ["sonrava.com"]
+        },
+        {
+          "name": "Dental Care Alliance",
+          "domains": ["dentalcarealliance.net"]
+        },
+        {
+          "name": "Great Expressions Dental Centers",
+          "domains": ["greatexpressions.com"]
+        },
+        {
+          "name": "Affordable Care",
+          "domains": ["affordablecare.com"]
+        },
+        {
+          "name": "InterDent",
+          "domains": ["interdent.com"]
+        },
+        {
+          "name": "DECA Dental Group",
+          "domains": ["decadental.com"]
+        },
+        {
+          "name": "Dental365",
+          "domains": ["godental365.com"]
+        },
+        {
+          "name": "Guardian Dentistry Partners",
+          "domains": ["guardiandentistry.com"]
+        },
+        {
+          "name": "North American Dental Group",
+          "domains": ["nadentalgroup.com"]
+        },
+        {
+          "name": "Mortenson Dental Partners",
+          "domains": ["mortensondentalpartners.com"]
+        },
+        {
+          "name": "42 North Dental",
+          "domains": ["42northdental.com"]
+        },
+        {
+          "name": "Sage Dental",
+          "domains": ["mysagedental.com"]
+        },
+        {
+          "name": "D4C Dental Brands",
+          "domains": ["d4cdentalbrands.com"]
+        },
+        {
+          "name": "U.S. Oral Surgery Management",
+          "domains": ["usosm.com"]
+        },
+        {
+          "name": "Specialty Dental Brands",
+          "domains": ["specialtydentalbrands.com"]
+        },
+        {
+          "name": "Absolute Dental",
+          "domains": ["absolutedental.com", "absolutedentalcare.com"]
+        }
+      ]
+    },
+    "educational": {
+      "enabled": true,
+      "description": "Educational institutions including dental schools, hygienist schools, and extended learning programs",
+      "matchingRules": {
+        "tldMatch": true,
+        "keywordMatch": true
+      },
+      "tlds": [".edu"],
+      "keywords": [
+        "dental school",
+        "school of dentistry",
+        "school of dental",
+        "college of dentistry",
+        "college of dental",
+        "dental hygiene program",
+        "hygienist school",
+        "dental hygiene school",
+        "continuing education",
+        "extended learning",
+        "professional development",
+        "university dental",
+        "teaching clinic",
+        "dental education",
+        "oral health sciences",
+        "dental medicine school",
+        "academic dental",
+        "dental residency program",
+        "postgraduate dental",
+        "dental training center"
+      ]
+    },
+    "government": {
+      "enabled": true,
+      "description": "Government entities and facilities",
+      "matchingRules": {
+        "tldMatch": true
+      },
+      "tlds": [".gov", ".mil"],
+      "keywords": []
+    },
+    "clinic": {
+      "enabled": true,
+      "description": "Community clinics, health centers, and non-profit dental facilities",
+      "matchingRules": {
+        "keywordMatch": true
+      },
+      "keywords": [
+        "clinic",
+        "community health",
+        "community dental",
+        "health center",
+        "dental foundation",
+        "foundation dental",
+        "free clinic",
+        "dental care center",
+        "public health dental",
+        "non-profit dental",
+        "nonprofit dental",
+        "charitable dental",
+        "mission dental",
+        "mobile dental",
+        "dental van",
+        "outreach dental"
+      ]
+    }
+  },
+  "notes": [
+    "DSO exclusions: All corporate dental organizations are excluded",
+    ".edu exclusions: Catches ALL .edu domains to exclude dental schools, hygienist schools, extended learning, university clinics, etc.",
+    ".gov/.mil exclusions: All government and military facilities",
+    "Clinic exclusions: Community health centers, non-profit facilities, mobile clinics"
+  ]
+}

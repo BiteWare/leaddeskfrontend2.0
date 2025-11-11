@@ -53,6 +53,25 @@ export async function POST(req: Request) {
       }
     }
 
+    // Map exclusion type to cohort
+    let cohort = "Uncategorized";
+    switch (exclusion_type) {
+      case "DSO":
+        cohort = "DSO";
+        break;
+      case "EDU":
+        cohort = "Education";
+        break;
+      case "GOV":
+        cohort = "Government";
+        break;
+      case "CLINIC":
+        cohort = "Clinic";
+        break;
+      default:
+        cohort = "Uncategorized";
+    }
+
     // Create excluded job entry in database
     const { data, error } = await supabase
       .from("enrichment_jobs")
@@ -64,7 +83,7 @@ export async function POST(req: Request) {
         input_city: city || "",
         input_state: state || "",
         overall_job_status: "excluded",
-        cohort: exclusion_type === "DSO" ? "DSO" : exclusion_type === "EDU" ? "Education" : "Government",
+        cohort,
         exclusion_reason: exclusion_reason,
         url_worker_resulting_url: detected_domain || null,
         created_at: new Date().toISOString(),

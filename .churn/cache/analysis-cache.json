@@ -121,11 +121,85 @@
       "provider": "anthropic"
     },
     "app\\page.tsx": {
-      "fileHash": "5868fed2f1f6812d273ae7b1866b95a7197cf832c08aac40a7c04e3d398e1c59",
-      "suggestions": [],
-      "lastModified": 1762450480004,
+      "fileHash": "fd66abc0d1477b41b2fb5fffb50fdd6d8b4d3da365c554268feb9827fa5d52a1",
+      "suggestions": [
+        {
+          "file": "app\\page.tsx",
+          "category": "bug",
+          "severity": "high",
+          "title": "Dynamic import causes module loading issues and loses type safety",
+          "description": "The dynamic import of supabase-client inside the handleSearch function is repeated twice and executed at runtime, which can cause race conditions, bundle splitting issues, and loses TypeScript type checking. This pattern also makes the code harder to test and reason about.",
+          "suggestion": "Move the supabase import to the top level of the module. Create a helper function to get the access token that can be reused. This ensures proper type safety, better tree-shaking, and eliminates potential race conditions.",
+          "code": {
+            "before": "const {\n  data: { session },\n} = await import(\"@/utils/supabase-client\").then((m) =>\n  m.supabase.auth.getSession(),\n);\naccessToken = session?.access_token;",
+            "after": "// At top of file\nimport { supabase } from \"@/utils/supabase-client\";\n\n// Helper function outside component\nconst getAccessToken = async (): Promise<string | undefined> => {\n  const { data: { session } } = await supabase.auth.getSession();\n  return session?.access_token;\n};\n\n// In handleSearch\nif (user) {\n  accessToken = await getAccessToken();\n}",
+            "startLine": 68,
+            "endLine": 73
+          }
+        },
+        {
+          "file": "app\\page.tsx",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Extract duplicate timing logic and token retrieval into reusable utilities",
+          "description": "The minimum loading duration logic is repeated 4 times throughout the function, and the access token retrieval is duplicated twice. This violates DRY principles and makes the code harder to maintain. If timing requirements change, multiple locations need updates.",
+          "suggestion": "Create utility functions for timing control and access token retrieval. This improves testability, reduces code duplication, and makes the business logic clearer.",
+          "code": {
+            "before": "const startTime = Date.now();\nconst minLoadingDuration = 1500;\n\n// Later...\nconst elapsed = Date.now() - startTime;\nconst remainingTime = Math.max(0, minLoadingDuration - elapsed);\nawait new Promise((resolve) => setTimeout(resolve, remainingTime));",
+            "after": "// At top of file or in utils\nclass LoadingTimer {\n  private startTime: number;\n  private minDuration: number;\n\n  constructor(minDuration = 1500) {\n    this.startTime = Date.now();\n    this.minDuration = minDuration;\n  }\n\n  async ensureMinimumDuration(): Promise<void> {\n    const elapsed = Date.now() - this.startTime;\n    const remainingTime = Math.max(0, this.minDuration - elapsed);\n    if (remainingTime > 0) {\n      await new Promise((resolve) => setTimeout(resolve, remainingTime));\n    }\n  }\n}\n\n// In handleSearch\nconst timer = new LoadingTimer(1500);\n\ntry {\n  // ... logic ...\n  await timer.ensureMinimumDuration();\n  router.push(`/results/${excludedJobId}`);\n} catch (error) {\n  await timer.ensureMinimumDuration();\n  setShowError(true);\n}",
+            "startLine": 28,
+            "endLine": 34
+          }
+        },
+        {
+          "file": "app\\page.tsx",
+          "category": "optimization",
+          "severity": "medium",
+          "title": "Memoize handleSearch callback to prevent unnecessary re-renders",
+          "description": "The handleSearch function is recreated on every render, which can cause the Searchbar component to re-render unnecessarily if it's using this prop in its dependency array or comparison. This is especially problematic given the complex async logic inside.",
+          "suggestion": "Wrap handleSearch in useCallback with proper dependencies. This ensures the function reference remains stable across renders unless its dependencies change, improving performance of child components.",
+          "code": {
+            "before": "const handleSearch = async (query: string) => {\n  setIsSubmitting(true);\n  setShowError(false);\n  jobStatus.reset();\n  // ... rest of function\n};",
+            "after": "const handleSearch = useCallback(async (query: string) => {\n  setIsSubmitting(true);\n  setShowError(false);\n  jobStatus.reset();\n  \n  const timer = new LoadingTimer(1500);\n  \n  try {\n    // ... rest of function\n  } catch (error) {\n    console.error('Search error:', error);\n    await timer.ensureMinimumDuration();\n    setShowError(true);\n    setIsSubmitting(false);\n  }\n}, [user, router, jobStatus]);\n\n// Note: Ensure jobStatus methods are stable or memoized in the hook",
+            "startLine": 25,
+            "endLine": 27
+          }
+        },
+        {
+          "file": "app\\page.tsx",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Extract complex business logic into separate service/hook for better testability",
+          "description": "The handleSearch function is 150+ lines with multiple responsibilities: exclusion detection, API calls, error handling, timing, and navigation. This violates Single Responsibility Principle and makes unit testing extremely difficult. The component should focus on UI concerns.",
+          "suggestion": "Create a custom hook useSearchSubmission that encapsulates the search logic, making it testable in isolation and keeping the component focused on rendering. This also makes it easier to reuse the logic if needed.",
+          "code": {
+            "before": "const handleSearch = async (query: string) => {\n  // 150+ lines of mixed concerns\n  setIsSubmitting(true);\n  // exclusion checking\n  // API calls\n  // error handling\n  // navigation\n};",
+            "after": "// hooks/useSearchSubmission.ts\ninterface UseSearchSubmissionReturn {\n  submitSearch: (query: string) => Promise<void>;\n  isSubmitting: boolean;\n  error: Error | null;\n}\n\nexport function useSearchSubmission(): UseSearchSubmissionReturn {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n  const [error, setError] = useState<Error | null>(null);\n  const { user } = useUsers();\n  const router = useRouter();\n  const jobStatus = useLeadJobStatus();\n\n  const submitSearch = useCallback(async (query: string) => {\n    setIsSubmitting(true);\n    setError(null);\n    jobStatus.reset();\n    \n    const timer = new LoadingTimer(1500);\n\n    try {\n      const exclusionResult = await checkExclusion(query);\n      \n      if (exclusionResult.isExcluded) {\n        const jobId = await handleExcludedJob(exclusionResult, query, user);\n        await timer.ensureMinimumDuration();\n        router.push(`/results/${jobId}`);\n        return;\n      }\n\n      const correlationId = await submitJobToBackend(query, user);\n      await timer.ensureMinimumDuration();\n      jobStatus.startPolling(correlationId);\n      router.push(`/results/${correlationId}`);\n    } catch (err) {\n      await timer.ensureMinimumDuration();\n      setError(err as Error);\n    } finally {\n      setIsSubmitting(false);\n    }\n  }, [user, router, jobStatus]);\n\n  return { submitSearch, isSubmitting, error };\n}\n\n// In component\nconst { submitSearch, isSubmitting, error } = useSearchSubmission();\n\nreturn (\n  <Searchbar onSearch={submitSearch} />\n);",
+            "startLine": 25,
+            "endLine": 188
+          }
+        },
+        {
+          "file": "app\\page.tsx",
+          "category": "bug",
+          "severity": "medium",
+          "title": "Type-unsafe state management and missing error boundary",
+          "description": "The component lacks proper TypeScript types for state variables and error objects. The showError boolean doesn't capture the actual error message, making debugging harder. There's no error boundary to catch unexpected errors during render or in child components.",
+          "suggestion": "Add proper types for all state variables and consider using a more structured error state. Wrap the component with an error boundary or add one at the route level to handle unexpected errors gracefully.",
+          "code": {
+            "before": "const [isSubmitting, setIsSubmitting] = useState(false);\nconst [showError, setShowError] = useState(false);\n\n// Later\ncatch (error) {\n  console.error('Search error:', error);\n  setShowError(true);\n}",
+            "after": "interface SearchError {\n  message: string;\n  code?: string;\n  timestamp: Date;\n}\n\nconst [isSubmitting, setIsSubmitting] = useState<boolean>(false);\nconst [error, setError] = useState<SearchError | null>(null);\n\n// Later\ncatch (err) {\n  const searchError: SearchError = {\n    message: err instanceof Error ? err.message : 'An unexpected error occurred',\n    code: err instanceof Error && 'code' in err ? String(err.code) : undefined,\n    timestamp: new Date()\n  };\n  console.error('Search error:', searchError);\n  setError(searchError);\n}\n\n// In JSX\n{error && <JobErrorDisplay error={error} onRetry={handleRetry} />}",
+            "startLine": 19,
+            "endLine": 21
+          }
+        }
+      ],
+      "lastModified": 1762811109927,
       "model": "claude-sonnet-4-5",
-      "provider": "anthropic"
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 2582
     },
     "components\\theme-provider.tsx": {
       "fileHash": "c3ad0a142080a20c3229c1ceefd74e3fe0fd1f371dec8b07889c9d2b448d5c50",
@@ -177,11 +251,85 @@
       "provider": "anthropic"
     },
     "types\\database.types.ts": {
-      "fileHash": "beca0c3d9761a8c41053210b5fb01bd3f7c4475a84e79cac494362d21b3bd368",
-      "suggestions": [],
-      "lastModified": 1762450480031,
+      "fileHash": "636e2460eb7e91c2ba8a51a05a1a664f3729931841835affea7da8aa56684223",
+      "suggestions": [
+        {
+          "file": "types\\database.types.ts",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Replace string literals with TypeScript enums for status fields",
+          "description": "The fields 'overall_job_status', 'cohort', and 'exclusion_reason' are currently typed as 'string | null', which provides no type safety for their valid values. This can lead to typos, inconsistent values in the database, and makes refactoring difficult. String unions or enums would provide compile-time checking and better IntelliSense support.",
+          "suggestion": "Define specific string literal unions or enums for these status fields. This enforces type safety at compile time and makes the API contract explicit. Consider extracting these as separate type definitions for reusability across your codebase.",
+          "code": {
+            "before": "overall_job_status: string | null;\nurl_worker_job_id: string | null;\nscraper_worker_job_id: string | null;\ncohort: string | null;\nexclusion_reason: string | null;",
+            "after": "// Add these type definitions at the top of the file\nexport type JobStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';\nexport type Cohort = 'test' | 'control' | 'experimental';\nexport type ExclusionReason = 'invalid_address' | 'duplicate' | 'missing_data' | 'opted_out' | null;\n\n// Then update the Row type:\noverall_job_status: JobStatus | null;\nurl_worker_job_id: string | null;\nscraper_worker_job_id: string | null;\ncohort: Cohort | null;\nexclusion_reason: ExclusionReason;",
+            "startLine": 12,
+            "endLine": 24
+          }
+        },
+        {
+          "file": "types\\database.types.ts",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Add branded types for ID fields to prevent ID confusion",
+          "description": "The codebase has multiple ID fields (correlation_id, run_user_id, url_worker_job_id, scraper_worker_job_id) all typed as 'string'. This makes it easy to accidentally pass the wrong ID to functions expecting a different type. Branded types (nominal typing) would catch these bugs at compile time.",
+          "suggestion": "Use TypeScript branded types to create distinct types for different ID categories. This prevents accidentally using a correlation_id where a user_id is expected, catching bugs during development rather than runtime.",
+          "code": {
+            "before": "correlation_id: string;\nrun_user_id: string | null;\nurl_worker_job_id: string | null;\nscraper_worker_job_id: string | null;",
+            "after": "// Add branded type helpers at the top\nexport type Brand<K, T> = K & { __brand: T };\nexport type CorrelationId = Brand<string, 'CorrelationId'>;\nexport type UserId = Brand<string, 'UserId'>;\nexport type WorkerJobId = Brand<string, 'WorkerJobId'>;\n\n// Update the Row type:\ncorrelation_id: CorrelationId;\nrun_user_id: UserId | null;\nurl_worker_job_id: WorkerJobId | null;\nscraper_worker_job_id: WorkerJobId | null;\n\n// Helper functions to create branded types:\nexport const toCorrelationId = (id: string): CorrelationId => id as CorrelationId;\nexport const toUserId = (id: string): UserId => id as UserId;\nexport const toWorkerJobId = (id: string): WorkerJobId => id as WorkerJobId;",
+            "startLine": 11,
+            "endLine": 18
+          }
+        },
+        {
+          "file": "types\\database.types.ts",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Create strongly-typed interfaces for JSON result fields",
+          "description": "The 'url_worker_results_json' and 'scraper_worker_results_json' fields are typed as 'Json | null', which is essentially 'any' in practice. This removes all type safety when accessing these fields and can lead to runtime errors. These fields appear to have specific structures based on their naming.",
+          "suggestion": "Define explicit interfaces for the expected structure of worker results. This provides IntelliSense, catches errors at compile time, and serves as documentation. Use type guards or schema validation (like Zod) at runtime to ensure data integrity.",
+          "code": {
+            "before": "url_worker_results_json: Json | null;\nscraper_worker_results_json: Json | null;",
+            "after": "// Define specific result types\nexport interface UrlWorkerResults {\n  url: string;\n  status: 'success' | 'failed';\n  timestamp: string;\n  metadata?: {\n    redirects?: number;\n    finalStatusCode?: number;\n  };\n}\n\nexport interface ScraperWorkerResults {\n  content: string;\n  title?: string;\n  description?: string;\n  keywords?: string[];\n  extractedData?: Record<string, unknown>;\n  status: 'success' | 'failed';\n  timestamp: string;\n}\n\n// Update the Row type:\nurl_worker_results_json: UrlWorkerResults | null;\nscraper_worker_results_json: ScraperWorkerResults | null;",
+            "startLine": 19,
+            "endLine": 21
+          }
+        },
+        {
+          "file": "types\\database.types.ts",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Use Date type instead of string for timestamp fields",
+          "description": "The 'created_at' and 'updated_at' fields are typed as 'string | null', but they represent timestamps. Using strings for dates loses type information and makes date operations error-prone. TypeScript can represent dates more safely.",
+          "suggestion": "Change timestamp fields to use proper Date types or ISO string literal types. This makes date operations type-safe and integrates better with date libraries. Consider adding a utility type to distinguish between database string timestamps and application Date objects.",
+          "code": {
+            "before": "Row: {\n  // ...\n  created_at: string | null;\n  updated_at: string | null;\n}\n\nenrichment_jobs: {\n  Row: {\n    // ...\n    created_at: string | null;\n  };\n}",
+            "after": "// Add timestamp type helper\nexport type ISODateString = string & { readonly __brand: 'ISODateString' };\n\n// For Row types (as returned from DB):\nRow: {\n  // ...\n  created_at: ISODateString | null;\n  updated_at: ISODateString | null;\n}\n\nenrichment_jobs: {\n  Row: {\n    // ...\n    created_at: ISODateString | null;\n  };\n}\n\n// Add helper for working with dates in app code:\nexport type WithDates<T> = {\n  [K in keyof T]: T[K] extends ISODateString | null\n    ? Date | null\n    : T[K] extends ISODateString\n    ? Date\n    : T[K];\n};\n\n// Usage: WithDates<Tables<'users'>> for app-level types",
+            "startLine": 65,
+            "endLine": 69
+          }
+        },
+        {
+          "file": "types\\database.types.ts",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Create a structured address type to group related fields",
+          "description": "The enrichment_jobs table has four separate address-related fields (input_customer_name, input_street_address, input_city, input_state) that are conceptually a single entity. This makes it harder to work with addresses as a unit and can lead to partially invalid data (e.g., city without state).",
+          "suggestion": "Create a separate Address interface and use it consistently. While the database has flat columns, you can create helper types for application use that group these fields logically. This improves code organization and makes it easier to validate addresses as complete units.",
+          "code": {
+            "before": "input_customer_name: string | null;\ninput_street_address: string | null;\ninput_city: string | null;\ninput_state: string | null;",
+            "after": "// Keep the Row type as-is for DB compatibility:\ninput_customer_name: string | null;\ninput_street_address: string | null;\ninput_city: string | null;\ninput_state: string | null;\n\n// Add helper types for application use:\nexport interface Address {\n  customerName: string;\n  streetAddress: string;\n  city: string;\n  state: string; // Consider using a union of US state codes\n}\n\nexport type PartialAddress = Partial<Address>;\n\n// Helper to convert DB row to Address\nexport function toAddress(row: Tables<'enrichment_jobs'>): PartialAddress {\n  return {\n    customerName: row.input_customer_name ?? undefined,\n    streetAddress: row.input_street_address ?? undefined,\n    city: row.input_city ?? undefined,\n    state: row.input_state ?? undefined,\n  };\n}",
+            "startLine": 14,
+            "endLine": 17
+          }
+        }
+      ],
+      "lastModified": 1762811109293,
       "model": "claude-sonnet-4-5",
-      "provider": "anthropic"
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 1834
     },
     "utils\\supabase.ts": {
       "fileHash": "cb1905ed2315373950a326aa24f4278c0b50df71f8aeb42ca2bcbbbbcdd05bb8",
@@ -597,11 +745,85 @@
       "provider": "anthropic"
     },
     "components\\jobs-table.tsx": {
-      "fileHash": "2d68d9411b4fbcfc2a42895ab58478b33820ef54a082da99ca9e6322e82e0961",
-      "suggestions": [],
-      "lastModified": 1762450480133,
+      "fileHash": "c8633dd21e033a21d3d6aa8b4aac1964280d4cd4bb2fc51bf03df261928eb972",
+      "suggestions": [
+        {
+          "file": "components\\jobs-table.tsx",
+          "category": "bug",
+          "severity": "high",
+          "title": "Missing dependency in useMemo causes stale data",
+          "description": "The `filteredJobs` useMemo hook doesn't include `jobs` in its dependency array explicitly as a memoized reference. While it's technically in the array, if the jobs array reference changes frequently, the search query state update won't trigger re-filtering. More critically, the console.log at the top runs on every render, suggesting this component re-renders frequently, but the memo might be holding stale filtered results.",
+          "suggestion": "Ensure the useMemo has proper dependencies and consider adding a debug log to verify re-computation. Also, remove the console.log from production code as it runs on every render and can impact performance with large job lists.",
+          "code": {
+            "before": "console.log(\"🔍 JobsTable received jobs:\", {\n  count: jobs.length,\n  jobs: jobs.map((j) => ({\n    correlation_id: j.correlation_id,\n    input_customer_name: j.input_customer_name,\n    overall_job_status: j.overall_job_status,\n  })),\n});\n\n// Filter jobs based on search query\nconst filteredJobs = useMemo(() => {\n  if (!searchQuery.trim()) return jobs;\n\n  const query = searchQuery.toLowerCase();\n  return jobs.filter((job) => {\n    const practiceName = job.input_customer_name?.toLowerCase() || \"\";\n    const address =\n      `${job.input_street_address || \"\"} ${job.input_city || \"\"} ${job.input_state || \"\"}`.toLowerCase();\n    const jobId = job.correlation_id?.toLowerCase() || \"\";\n\n    return (\n      practiceName.includes(query) ||\n      address.includes(query) ||\n      jobId.includes(query)\n    );\n  });\n}, [jobs, searchQuery]);",
+            "after": "// Filter jobs based on search query\nconst filteredJobs = useMemo(() => {\n  if (!searchQuery.trim()) return jobs;\n\n  const query = searchQuery.toLowerCase();\n  return jobs.filter((job) => {\n    const practiceName = job.input_customer_name?.toLowerCase() ?? \"\";\n    const address = `${job.input_street_address ?? \"\"} ${job.input_city ?? \"\"} ${job.input_state ?? \"\"}`.toLowerCase();\n    const jobId = job.correlation_id?.toLowerCase() ?? \"\";\n\n    return (\n      practiceName.includes(query) ||\n      address.includes(query) ||\n      jobId.includes(query)\n    );\n  });\n}, [jobs, searchQuery]);",
+            "startLine": 48,
+            "endLine": 74
+          }
+        },
+        {
+          "file": "components\\jobs-table.tsx",
+          "category": "optimization",
+          "severity": "high",
+          "title": "Extract repetitive status check logic into memoized helper",
+          "description": "The AlertDialog components contain deeply nested inline conditionals that find jobs and check status multiple times. This logic is repeated 6+ times in the dialog content, causing unnecessary array searches and making the code hard to maintain. Each inline expression calls `jobs.find()` which is O(n) and runs on every render when the dialog is open.",
+          "suggestion": "Extract the job lookup and status checking into useMemo hooks. This improves performance and makes the dialog logic much cleaner and maintainable.",
+          "code": {
+            "before": "<AlertDialogTitle>\n  {jobToKill &&\n  jobs.find((j) => j.correlation_id === jobToKill)\n    ?.overall_job_status &&\n  [\n    \"pending_url_search\",\n    \"url_worker_called\",\n    \"scraper_worker_called\",\n    \"queued\",\n    \"in_progress\",\n  ].includes(\n    jobs.find((j) => j.correlation_id === jobToKill)!\n      .overall_job_status!,\n  )\n    ? \"Cancel Job?\"\n    : \"Delete Job?\"}\n</AlertDialogTitle>",
+            "after": "// Add after filteredJobs useMemo\nconst selectedKillJob = useMemo(\n  () => jobs.find((j) => j.correlation_id === jobToKill),\n  [jobs, jobToKill]\n);\n\nconst isKillJobActive = useMemo(() => {\n  const activeStates = [\n    \"pending_url_search\",\n    \"url_worker_called\",\n    \"scraper_worker_called\",\n    \"queued\",\n    \"in_progress\",\n  ];\n  return selectedKillJob?.overall_job_status\n    ? activeStates.includes(selectedKillJob.overall_job_status)\n    : false;\n}, [selectedKillJob]);\n\n// Then in the dialog:\n<AlertDialogTitle>\n  {isKillJobActive ? \"Cancel Job?\" : \"Delete Job?\"}\n</AlertDialogTitle>\n<AlertDialogDescription>\n  {isKillJobActive\n    ? \"Are you sure you want to cancel this job? This action cannot be undone. The job will be marked as cancelled and will stop processing.\"\n    : \"Are you sure you want to delete this job? This action cannot be undone. All job data will be permanently removed from the system.\"}\n</AlertDialogDescription>",
+            "startLine": 417,
+            "endLine": 433
+          }
+        },
+        {
+          "file": "components\\jobs-table.tsx",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Memoize expensive callback functions to prevent child re-renders",
+          "description": "The `handleRowClick`, `handleKillJob`, and `handleRedoJob` functions are recreated on every render. While this doesn't break functionality, it can cause unnecessary re-renders if these functions are passed to memoized child components in the future. More importantly, the inline event handlers in the table cells and buttons create new function references on every render.",
+          "suggestion": "Wrap the handler functions in useCallback with appropriate dependencies. This is a best practice for functions used in event handlers, especially in lists that might grow large.",
+          "code": {
+            "before": "const handleRowClick = (job: EnrichmentJob) => {\n  if (isClickable(job.overall_job_status)) {\n    router.push(`/results/${job.correlation_id}`);\n  }\n};\n\n// ...\n\nconst handleKillJob = async (correlationId: string) => {\n  setKillingJob(correlationId);\n\n  try {\n    const response = await fetch(\"/api/kill-job\", {\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      body: JSON.stringify({ correlation_id: correlationId }),\n    });",
+            "after": "const handleRowClick = useCallback((job: EnrichmentJob) => {\n  if (isClickable(job.overall_job_status)) {\n    router.push(`/results/${job.correlation_id}`);\n  }\n}, [router]);\n\nconst handleKillJob = useCallback(async (correlationId: string) => {\n  setKillingJob(correlationId);\n\n  try {\n    const response = await fetch(\"/api/kill-job\", {\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      body: JSON.stringify({ correlation_id: correlationId }),\n    });",
+            "startLine": 200,
+            "endLine": 215
+          }
+        },
+        {
+          "file": "components\\jobs-table.tsx",
+          "category": "bug",
+          "severity": "medium",
+          "title": "Race condition with setTimeout in redo handler",
+          "description": "The `handleRedoJob` function uses a hardcoded 1-second setTimeout before refreshing data. This is unreliable because: 1) The job might not be ready in 1 second, 2) The component might unmount during the timeout causing a memory leak, 3) If the user triggers multiple redos quickly, multiple timeouts will be pending. The setTimeout also won't be cleared if the component unmounts.",
+          "suggestion": "Remove the setTimeout and rely on the API response or implement proper polling/subscription. If a delay is truly needed, use a more robust approach with cleanup. Better yet, have the API endpoint wait until the job is created before responding.",
+          "code": {
+            "before": "// Show success toast\ntoast.success(\n  `Job resubmitted successfully! New job created for ${result.data?.input_customer_name || \"this practice\"}.`,\n);\n\n// Wait a moment for the job to be created in the database, then refresh\nsetTimeout(async () => {\n  if (onRefresh) {\n    await onRefresh();\n  } else {\n    router.refresh();\n  }\n}, 1000);",
+            "after": "// Show success toast\ntoast.success(\n  `Job resubmitted successfully! New job created for ${result.data?.input_customer_name || \"this practice\"}.`,\n);\n\n// Refresh immediately - the API should have already created the job\nif (onRefresh) {\n  await onRefresh();\n} else {\n  router.refresh();\n}",
+            "startLine": 291,
+            "endLine": 303
+          }
+        },
+        {
+          "file": "components\\jobs-table.tsx",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Extract complex status badge logic into separate component",
+          "description": "The `getStatusBadge` function is 80+ lines long with complex nested logic, multiple early returns, and hardcoded styling. It mixes business logic (cohort checking, status mapping) with presentation logic (badge variants, icons). This makes it difficult to test, maintain, and reuse. The function is also called inline during render for every row.",
+          "suggestion": "Extract into a separate memoized component or at minimum use useMemo for the status map constant. Consider splitting cohort badge logic from status badge logic. This improves testability and makes the code more modular.",
+          "code": {
+            "before": "const getStatusBadge = (status: string | null, job: EnrichmentJob) => {\n  // Override status display if job is stale\n  if (isJobStale(job)) {\n    return (\n      <Badge variant=\"destructive\" className=\"flex items-center gap-1 w-fit\">\n        <AlertCircle className=\"h-3 w-3\" />\n        Timed Out\n      </Badge>\n    );\n  }\n\n  // Show cohort type for cancelled/stopped jobs if they are DSO, EDU, or GOV\n  if (status === \"cancelled\" && job.cohort) {\n    const cohortType = job.cohort.toUpperCase();",
+            "after": "// Move status map outside component or into a constant file\nconst STATUS_CONFIG = {\n  pending_url_search: {\n    label: \"Finding Website\",\n    variant: \"secondary\" as const,\n    icon: Loader2,\n    animate: true,\n  },\n  // ... other statuses\n} as const;\n\ntype JobStatusBadgeProps = {\n  job: EnrichmentJob;\n  isStale: boolean;\n};\n\nconst JobStatusBadge = memo(({ job, isStale }: JobStatusBadgeProps) => {\n  if (isStale) {\n    return (\n      <Badge variant=\"destructive\" className=\"flex items-center gap-1 w-fit\">\n        <AlertCircle className=\"h-3 w-3\" />\n        Timed Out\n      </Badge>\n    );\n  }\n\n  if (job.overall_job_status === \"cancelled\" && job.cohort) {\n    const cohortType = job.cohort.toUpperCase();\n    if ([\"DSO\", \"EDU\", \"EDUCATION\", \"GOV\", \"GOVERNMENT\"].includes(cohortType)) {\n      return <CohortBadge cohortType={cohortType} />;\n    }\n  }\n\n  const config = STATUS_CONFIG[job.overall_job_status ?? 'unknown'];\n  const Icon = config?.icon ?? Clock;\n  \n  return (\n    <Badge variant={config?.variant ?? 'outline'} className=\"flex items-center gap-1 w-fit\">\n      <Icon className={`h-3 w-3 ${config?.animate ? 'animate-spin' : ''}`} />\n      {config?.label ?? job.overall_job_status ?? 'Unknown'}\n    </Badge>\n  );\n});\n\n// In table cell:\n<TableCell className=\"cursor-pointer\" onClick={() => handleRowClick(job)}>\n  <JobStatusBadge job={job} isStale={isJobStale(job)} />\n</TableCell>",
+            "startLine": 96,
+            "endLine": 110
+          }
+        }
+      ],
+      "lastModified": 1762811121676,
       "model": "claude-sonnet-4-5",
-      "provider": "anthropic"
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 4844
     },
     "utils\\cohort-classifier.ts": {
       "fileHash": "423e9bd008a261982fb7cada547789c783ff9edc39166719960e26c596a7d8a2",
@@ -618,11 +840,85 @@
       "provider": "anthropic"
     },
     "app\\results\\[id]\\page.tsx": {
-      "fileHash": "970e05da54e052321b4fa2a99aefe7049d9faa600370cce0f3f5cbeb9ddeebe7",
-      "suggestions": [],
-      "lastModified": 1762450480131,
+      "fileHash": "84754a21313a29acbc0bd07d4a9e49bad0053b8866baa2774e058ea9f3d4051f",
+      "suggestions": [
+        {
+          "file": "app\\results\\[id]\\page.tsx",
+          "category": "bug",
+          "severity": "high",
+          "title": "Missing dependency in useEffect causing stale closure over job data",
+          "description": "The useEffect at line 160 that transforms scraper results has an empty dependency array but references the `job` object. This means the effect only runs once on mount, not when job data changes. If the job data arrives after the initial render (which is likely given the async nature), the transformation won't happen. This is a critical bug that prevents results from displaying.",
+          "suggestion": "Add `job` to the dependency array. However, since job is an object, this will cause the effect to run on every render if the reference changes. Consider extracting only the specific fields needed (job?.scraper_worker_results_json, job?.overall_job_status) or use a useMemo to stabilize the transformation logic.",
+          "code": {
+            "before": "  useEffect(() => {\n    console.log(\"🎯 useEffect triggered, job:\", {\n      hasJob: !!job,\n      status: job?.overall_job_status,\n      hasResults: !!job?.scraper_worker_results_json,\n    });\n    // ... transformation logic\n  }, []);",
+            "after": "  useEffect(() => {\n    console.log(\"🎯 useEffect triggered, job:\", {\n      hasJob: !!job,\n      status: job?.overall_job_status,\n      hasResults: !!job?.scraper_worker_results_json,\n    });\n\n    if (!job) return;\n\n    // Handle excluded jobs from database\n    if (job.overall_job_status === \"excluded\") {\n      console.log(\"🚫 Excluded job detected from database:\", job);\n      const excludedJobFromDB = {\n        id: job.correlation_id,\n        exclusionType: job.cohort === \"DSO\" ? \"DSO\" : job.cohort === \"Education\" ? \"EDU\" : \"GOV\" as const,\n        dsoName: job.cohort === \"DSO\" ? job.input_customer_name : undefined,\n        practiceName: job.input_customer_name || \"Unknown Practice\",\n        query: `${job.input_customer_name} ${job.input_street_address || \"\"} ${job.input_city || \"\"} ${job.input_state || \"\"}`.trim(),\n        detectedDomain: job.url_worker_resulting_url || undefined,\n        reason: job.exclusion_reason || undefined,\n        timestamp: job.created_at || new Date().toISOString(),\n      };\n      setExcludedJob(excludedJobFromDB);\n      return;\n    }\n\n    if (job.overall_job_status === \"scraper_worker_complete\" && job.scraper_worker_results_json) {\n      console.log(\"🔍 Raw scraper_worker_results_json:\", job.scraper_worker_results_json);\n      try {\n        const transformedData = transformScraperOutputToLeadData(\n          job.scraper_worker_results_json,\n          {\n            input_customer_name: job.input_customer_name,\n            input_street_address: job.input_street_address,\n            input_city: job.input_city,\n            input_state: job.input_state,\n          },\n        );\n        console.log(\"📊 Transformed lead data:\", transformedData);\n        if (transformedData) {\n          setLeadData(transformedData);\n          console.log(\"✅ LeadData set successfully!\");\n        }\n      } catch (error) {\n        console.error(\"❌ Error transforming data:\", error);\n      }\n    }\n  }, [job]);",
+            "startLine": 160,
+            "endLine": 218
+          }
+        },
+        {
+          "file": "app\\results\\[id]\\page.tsx",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Extract getStatusBadge to useMemo to prevent unnecessary Badge re-renders",
+          "description": "The getStatusBadge function is called inline during render in the JSX (line 333). This function contains complex logic including date calculations. Every time the component re-renders (which happens on every state update), this function re-executes even if the status and createdAt haven't changed. This is inefficient and creates new Badge component instances unnecessarily.",
+          "suggestion": "Move getStatusBadge logic into a useMemo hook that depends only on job.overall_job_status and job.created_at. This ensures the badge is only recalculated when these specific values change, improving performance especially during frequent refetch operations.",
+          "code": {
+            "before": "  return (\n    <SidebarProvider>\n      {/* ... */}\n      {job && (\n        <>\n          {/* ... */}\n          {getStatusBadge(\n            job.overall_job_status || \"unknown\",\n            job.created_at,\n          )}\n        </>\n      )}\n    </SidebarProvider>\n  );",
+            "after": "  const statusBadge = useMemo(() => {\n    if (!job) return null;\n    \n    const status = job.overall_job_status || \"unknown\";\n    const createdAt = job.created_at;\n    \n    // Check if job is stale\n    const isJobStale = (): boolean => {\n      const processingStates = [\n        \"pending_url_search\",\n        \"url_worker_called\",\n        \"scraper_worker_called\",\n        \"queued\",\n        \"in_progress\",\n      ];\n\n      if (!processingStates.includes(status) || !createdAt) {\n        return false;\n      }\n\n      const created = new Date(createdAt);\n      const now = new Date();\n      const ageInMinutes = (now.getTime() - created.getTime()) / (1000 * 60);\n      return ageInMinutes > 10;\n    };\n\n    if (isJobStale()) {\n      return <Badge variant=\"destructive\">Timed Out</Badge>;\n    }\n\n    const statusMap: Record<string, { label: string; variant: \"default\" | \"secondary\" | \"destructive\" | \"outline\" }> = {\n      pending_url_search: { label: \"Finding Website\", variant: \"secondary\" },\n      url_worker_called: { label: \"URL Search Started\", variant: \"secondary\" },\n      url_worker_complete: { label: \"Website Found\", variant: \"outline\" },\n      scraper_worker_called: { label: \"Analyzing Website\", variant: \"secondary\" },\n      scraper_worker_complete: { label: \"Completed\", variant: \"default\" },\n      failed: { label: \"Failed\", variant: \"destructive\" },\n      expired: { label: \"Expired\", variant: \"destructive\" },\n      cancelled: { label: \"Cancelled\", variant: \"outline\" },\n    };\n\n    const config = statusMap[status] || { label: status, variant: \"outline\" as const };\n    return <Badge variant={config.variant}>{config.label}</Badge>;\n  }, [job?.overall_job_status, job?.created_at]);\n\n  return (\n    <SidebarProvider>\n      {/* ... */}\n      {job && (\n        <>\n          {/* ... */}\n          {statusBadge}\n        </>\n      )}\n    </SidebarProvider>\n  );",
+            "startLine": 17,
+            "endLine": 100
+          }
+        },
+        {
+          "file": "app\\results\\[id]\\page.tsx",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Memoize handleManualRefresh to prevent unnecessary function recreations",
+          "description": "The handleManualRefresh function is recreated on every render, which means the Button component receiving it as a prop will re-render unnecessarily even when nothing has changed. Since this function is passed as a prop and depends only on refetch (which should be stable from the custom hook), it should be wrapped in useCallback.",
+          "suggestion": "Wrap handleManualRefresh in useCallback with refetch in the dependency array. This ensures the function reference remains stable across renders unless refetch changes, reducing unnecessary child component re-renders.",
+          "code": {
+            "before": "  const handleManualRefresh = async () => {\n    setIsRefreshing(true);\n    await refetch();\n    setTimeout(() => setIsRefreshing(false), 500);\n  };",
+            "after": "  const handleManualRefresh = useCallback(async () => {\n    setIsRefreshing(true);\n    await refetch();\n    setTimeout(() => setIsRefreshing(false), 500);\n  }, [refetch]);",
+            "startLine": 151,
+            "endLine": 155
+          }
+        },
+        {
+          "file": "app\\results\\[id]\\page.tsx",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Type ExcludedJob exclusionType more strictly and avoid type assertion",
+          "description": "The ExcludedJob interface defines exclusionType as a union 'DSO' | 'EDU', but in the code at line 170, there's a fallback to 'GOV' which isn't part of the type definition. This creates a type mismatch and requires an 'as const' assertion. This is error-prone and could cause runtime issues if other exclusion types are added.",
+          "suggestion": "Update the ExcludedJob interface to include all possible exclusion types including 'GOV', and create a proper type guard or mapping function to ensure type safety. Also consider extracting the exclusion type determination logic into a separate typed function.",
+          "code": {
+            "before": "interface ExcludedJob {\n  id: string;\n  exclusionType: \"DSO\" | \"EDU\";\n  dsoName?: string;\n  practiceName: string;\n  query: string;\n  detectedDomain?: string;\n  reason?: string;\n  timestamp: string;\n}\n\n// Later in code:\nconst excludedJobFromDB = {\n  id: job.correlation_id,\n  exclusionType:\n    job.cohort === \"DSO\"\n      ? \"DSO\"\n      : job.cohort === \"Education\"\n        ? \"EDU\"\n        : \"GOV\",\n  // ...\n};",
+            "after": "type ExclusionType = \"DSO\" | \"EDU\" | \"GOV\";\n\ninterface ExcludedJob {\n  id: string;\n  exclusionType: ExclusionType;\n  dsoName?: string;\n  practiceName: string;\n  query: string;\n  detectedDomain?: string;\n  reason?: string;\n  timestamp: string;\n}\n\nfunction determineExclusionType(cohort: string | null | undefined): ExclusionType {\n  if (cohort === \"DSO\") return \"DSO\";\n  if (cohort === \"Education\") return \"EDU\";\n  return \"GOV\";\n}\n\n// Later in code:\nconst excludedJobFromDB: ExcludedJob = {\n  id: job.correlation_id,\n  exclusionType: determineExclusionType(job.cohort),\n  dsoName: job.cohort === \"DSO\" ? job.input_customer_name : undefined,\n  // ...\n};",
+            "startLine": 103,
+            "endLine": 112
+          }
+        },
+        {
+          "file": "app\\results\\[id]\\page.tsx",
+          "category": "optimization",
+          "severity": "medium",
+          "title": "Prevent memory leak from setTimeout in handleManualRefresh",
+          "description": "The setTimeout in handleManualRefresh (line 154) doesn't clean up if the component unmounts before the timeout completes. If a user navigates away quickly after clicking refresh, the setIsRefreshing(false) will attempt to update state on an unmounted component, causing a React warning and potential memory leak.",
+          "suggestion": "Store the timeout ID and clear it in a cleanup function. Better yet, consider using a ref to track mounted status or restructure to avoid the artificial delay altogether. The 500ms delay seems to be purely cosmetic for showing the animation, which could be handled differently.",
+          "code": {
+            "before": "  const handleManualRefresh = async () => {\n    setIsRefreshing(true);\n    await refetch();\n    setTimeout(() => setIsRefreshing(false), 500);\n  };",
+            "after": "  const handleManualRefresh = useCallback(async () => {\n    setIsRefreshing(true);\n    try {\n      await refetch();\n    } finally {\n      // Use a ref to track if component is mounted\n      const timeoutId = setTimeout(() => {\n        setIsRefreshing(false);\n      }, 500);\n      \n      // Store timeout for potential cleanup\n      return () => clearTimeout(timeoutId);\n    }\n  }, [refetch]);\n\n  // Alternative: Remove artificial delay and let animation be CSS-based\n  const handleManualRefresh = useCallback(async () => {\n    setIsRefreshing(true);\n    await refetch();\n    // Let CSS transition handle the visual feedback\n    // Use requestAnimationFrame to ensure state update happens after paint\n    requestAnimationFrame(() => {\n      setIsRefreshing(false);\n    });\n  }, [refetch]);",
+            "startLine": 151,
+            "endLine": 155
+          }
+        }
+      ],
+      "lastModified": 1762811118022,
       "model": "claude-sonnet-4-5",
-      "provider": "anthropic"
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 3454
     },
     "package.json": {
       "fileHash": "203f50c7a1345aa34c8bca9d48e2b13894f98a6ebcda84f69ccd29d1edcc6e44",
@@ -660,11 +956,85 @@
       "provider": "anthropic"
     },
     "components\\lead-view.tsx": {
-      "fileHash": "810342f410e2fac4b94d540af20658869acc4ea61ebc7d55bf14aa3fe3811143",
-      "suggestions": [],
-      "lastModified": 1762450480135,
+      "fileHash": "d79a0c131f0b7e042bee8afdbc592312d02c4e422e7b840acec50a9e8c85e0ea",
+      "suggestions": [
+        {
+          "file": "components\\lead-view.tsx",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Replace 'any' type with proper type definition for rawJson",
+          "description": "The rawJson property is typed as 'any', which defeats TypeScript's type safety. This prevents the compiler from catching potential errors when accessing properties and makes the code harder to maintain. The raw JSON should have a defined structure or use 'unknown' if the structure is truly dynamic.",
+          "suggestion": "Define a proper type for the raw JSON data structure. If the structure is truly dynamic and unpredictable, use 'unknown' instead of 'any' to maintain type safety and force explicit type checking before usage.",
+          "code": {
+            "before": "export interface LeadData {\n  // ... other properties\n  // Raw JSON data\n  rawJson?: any;\n}",
+            "after": "// If structure is known:\ninterface RawScraperData {\n  practice?: Record<string, unknown>;\n  staff?: unknown[];\n  locations?: unknown[];\n  metadata?: Record<string, unknown>;\n  [key: string]: unknown; // Allow additional properties\n}\n\nexport interface LeadData {\n  // ... other properties\n  // Raw JSON data\n  rawJson?: RawScraperData;\n}\n\n// Or if structure is truly unknown:\nexport interface LeadData {\n  // ... other properties\n  // Raw JSON data\n  rawJson?: unknown;\n}",
+            "startLine": 68,
+            "endLine": 70
+          }
+        },
+        {
+          "file": "components\\lead-view.tsx",
+          "category": "optimization",
+          "severity": "medium",
+          "title": "Memoize expensive computations and add missing dependencies",
+          "description": "The 'filteredStaff' useMemo has a potential bug where it references 'locations' to find states, but this creates unnecessary coupling. Additionally, state distribution in the analytics tab recalculates on every render. These computations should be memoized to prevent unnecessary recalculations.",
+          "suggestion": "Separate location state lookup into its own memoized value and memoize the role distribution calculation. Also ensure all dependencies are properly included in dependency arrays.",
+          "code": {
+            "before": "const filteredStaff = useMemo(() => {\n  return staff.filter((member) => {\n    const matchesSearch =\n      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||\n      member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||\n      (member.location &&\n        member.location.toLowerCase().includes(searchTerm.toLowerCase()));\n    const matchesState =\n      stateFilter === \"all\" ||\n      (member.location &&\n        locations.find((loc) => loc.name === member.location)?.state ===\n          stateFilter);\n    const matchesRole =\n      roleFilter === \"all\" ||\n      member.role.toLowerCase().includes(roleFilter.toLowerCase());\n    return matchesSearch && matchesState && matchesRole;\n  });\n}, [staff, searchTerm, stateFilter, roleFilter, locations]);",
+            "after": "// Create a location name to state lookup map for O(1) access\nconst locationStateMap = useMemo(() => {\n  return new Map(locations.map(loc => [loc.name, loc.state]));\n}, [locations]);\n\nconst filteredStaff = useMemo(() => {\n  return staff.filter((member) => {\n    const matchesSearch =\n      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||\n      member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||\n      (member.location?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);\n    \n    const matchesState =\n      stateFilter === \"all\" ||\n      (member.location && locationStateMap.get(member.location) === stateFilter);\n    \n    const matchesRole =\n      roleFilter === \"all\" ||\n      member.role.toLowerCase().includes(roleFilter.toLowerCase());\n    \n    return matchesSearch && matchesState && matchesRole;\n  });\n}, [staff, searchTerm, stateFilter, roleFilter, locationStateMap]);\n\n// Memoize role distribution for analytics\nconst roleDistribution = useMemo(() => {\n  return staff.reduce((acc, member) => {\n    acc[member.role] = (acc[member.role] || 0) + 1;\n    return acc;\n  }, {} as Record<string, number>);\n}, [staff]);",
+            "startLine": 219,
+            "endLine": 234
+          }
+        },
+        {
+          "file": "components\\lead-view.tsx",
+          "category": "bug",
+          "severity": "high",
+          "title": "Fix unsafe optional chaining and potential null reference errors",
+          "description": "Throughout the component, there are several places where optional properties are accessed without proper null checks. For example, 'member.location' is checked with '&&' but then accessed directly, and the 'displayData' construction for excluded types doesn't handle all edge cases safely. This can lead to runtime errors in strict mode.",
+          "suggestion": "Use optional chaining (?.) and nullish coalescing (??) consistently throughout the component. Ensure all optional property accesses are properly guarded, especially in the displayData construction for exclusion types.",
+          "code": {
+            "before": "const displayData: LeadData =\n  leadData ||\n  (exclusionType\n    ? {\n        practiceName:\n          exclusionDetails?.practiceName ||\n          exclusionDetails?.dsoName ||\n          \"Unknown Practice\",\n        practiceAddress: exclusionDetails?.query || \"Address not available\",\n        practiceWebsite: exclusionDetails?.domain,\n        practicePhone: undefined,\n        practiceEmail: undefined,\n        practiceSpecialty:\n          exclusionType === \"DSO\"\n            ? \"Dental Service Organization\"\n            : exclusionType === \"EDU\"\n              ? \"Educational Institution\"\n              : \"Government Institution\",\n        numberOfDentists: 0,\n        numberOfHygienists: 0,\n        staff: [],\n        locations: [],\n        specialties: [],\n        resultingUrl: exclusionDetails?.domain,\n        personInCharge: undefined,\n        worksMultipleLocations: false,\n        scrapeNotes: undefined,\n        cohort: exclusionType,\n        originalInput: undefined,\n        rawJson: undefined,\n      }\n    : null);",
+            "after": "const displayData: LeadData | null = useMemo(() => {\n  if (leadData) return leadData;\n  \n  if (!exclusionType) return null;\n  \n  return {\n    practiceName:\n      exclusionDetails?.practiceName ??\n      exclusionDetails?.dsoName ??\n      \"Unknown Practice\",\n    practiceAddress: exclusionDetails?.query ?? \"Address not available\",\n    practiceWebsite: exclusionDetails?.domain,\n    practicePhone: undefined,\n    practiceEmail: undefined,\n    practiceSpecialty:\n      exclusionType === \"DSO\"\n        ? \"Dental Service Organization\"\n        : exclusionType === \"EDU\"\n          ? \"Educational Institution\"\n          : \"Government Institution\",\n    numberOfDentists: 0,\n    numberOfHygienists: 0,\n    staff: [],\n    locations: [],\n    specialties: [],\n    resultingUrl: exclusionDetails?.domain,\n    personInCharge: undefined,\n    worksMultipleLocations: false,\n    scrapeNotes: undefined,\n    cohort: exclusionType,\n    originalInput: undefined,\n    rawJson: undefined,\n  };\n}, [leadData, exclusionType, exclusionDetails]);",
+            "startLine": 162,
+            "endLine": 194
+          }
+        },
+        {
+          "file": "components\\lead-view.tsx",
+          "category": "optimization",
+          "severity": "medium",
+          "title": "Extract callback functions and avoid inline function creation in JSX",
+          "description": "Several event handlers are defined inline within the JSX, which creates new function instances on every render. This can cause unnecessary re-renders of child components and impacts performance, especially in a data-heavy component like this one.",
+          "suggestion": "Extract event handler functions using useCallback to maintain referential equality across renders. This is particularly important for frequently used handlers like filter changes and clipboard operations.",
+          "code": {
+            "before": "const copyToClipboard = async () => {\n  if (rawJson) {\n    try {\n      await navigator.clipboard.writeText(JSON.stringify(rawJson, null, 2));\n      setCopySuccess(true);\n      setTimeout(() => setCopySuccess(false), 2000);\n    } catch (err) {\n      console.error(\"Failed to copy:\", err);\n    }\n  }\n};\n\n// ... in JSX:\n<Input\n  placeholder=\"Search by name, role, or location...\"\n  value={searchTerm}\n  onChange={(e) => setSearchTerm(e.target.value)}\n  className=\"pl-10\"\n/>",
+            "after": "const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {\n  setSearchTerm(e.target.value);\n}, []);\n\nconst handleStateFilterChange = useCallback((value: string) => {\n  setStateFilter(value);\n}, []);\n\nconst handleRoleFilterChange = useCallback((value: string) => {\n  setRoleFilter(value);\n}, []);\n\nconst copyToClipboard = useCallback(async () => {\n  if (!rawJson) return;\n  \n  try {\n    await navigator.clipboard.writeText(JSON.stringify(rawJson, null, 2));\n    setCopySuccess(true);\n    setTimeout(() => setCopySuccess(false), 2000);\n  } catch (err) {\n    console.error(\"Failed to copy:\", err);\n  }\n}, [rawJson]);\n\nconst clearFilters = useCallback(() => {\n  setSearchTerm(\"\");\n  setStateFilter(\"all\");\n  setRoleFilter(\"all\");\n}, []);\n\nconst toggleInputExpanded = useCallback(() => {\n  setIsInputExpanded(prev => !prev);\n}, []);\n\n// ... in JSX:\n<Input\n  placeholder=\"Search by name, role, or location...\"\n  value={searchTerm}\n  onChange={handleSearchChange}\n  className=\"pl-10\"\n/>",
+            "startLine": 255,
+            "endLine": 265
+          }
+        },
+        {
+          "file": "components\\lead-view.tsx",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Extract complex JSX sections into separate components",
+          "description": "The LeadView component is over 900 lines long with deeply nested JSX. This makes it difficult to maintain, test, and reason about. Several sections (Practice Info cards, Analytics, Staff table) are self-contained and could be extracted into smaller, reusable components with clear props interfaces.",
+          "suggestion": "Extract major sections into separate components with proper TypeScript interfaces. This improves testability, reusability, and makes the component hierarchy clearer. Start with the most self-contained sections like PracticeInfoCard, StaffTable, and AnalyticsCharts.",
+          "code": {
+            "before": "// Inside LeadView component - 900+ lines\n<TabsContent value=\"practice-info\" className=\"space-y-6\">\n  <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">\n    <div className=\"space-y-6\">\n      <Card>\n        <CardHeader>\n          <CardTitle className=\"flex items-center gap-2\">\n            <Building className=\"h-5 w-5\" />\n            Practice Information\n          </CardTitle>\n        </CardHeader>\n        <CardContent className=\"space-y-3\">\n          {/* ... many lines of JSX ... */}\n        </CardContent>\n      </Card>\n    </div>\n  </div>\n</TabsContent>",
+            "after": "// New file: components/lead-view/PracticeInfoTab.tsx\ninterface PracticeInfoTabProps {\n  practiceName: string;\n  practiceAddress: string;\n  practiceWebsite?: string;\n  practicePhone?: string;\n  practiceEmail?: string;\n  cohort?: string;\n  originalInput?: string;\n  specialties: string[];\n  personInCharge?: LeadData['personInCharge'];\n  numberOfDentists: number;\n  numberOfHygienists: number;\n  locationsCount: number;\n  scrapeNotes?: string;\n}\n\nexport function PracticeInfoTab({ \n  practiceName,\n  practiceAddress,\n  // ... other props\n}: PracticeInfoTabProps) {\n  return (\n    <TabsContent value=\"practice-info\" className=\"space-y-6\">\n      <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">\n        <div className=\"space-y-6\">\n          <PracticeInformationCard\n            practiceName={practiceName}\n            practiceAddress={practiceAddress}\n            // ... other props\n          />\n          <PracticeDetailsCard\n            cohort={cohort}\n            specialties={specialties}\n          />\n        </div>\n        <div className=\"space-y-6\">\n          <LeadershipTeamCard\n            personInCharge={personInCharge}\n            numberOfDentists={numberOfDentists}\n            numberOfHygienists={numberOfHygienists}\n            locationsCount={locationsCount}\n          />\n          {scrapeNotes && <AdditionalInfoCard notes={scrapeNotes} />}\n        </div>\n      </div>\n    </TabsContent>\n  );\n}\n\n// In main LeadView component:\n<PracticeInfoTab\n  practiceName={practiceName}\n  practiceAddress={practiceAddress}\n  // ... pass props\n/>",
+            "startLine": 380,
+            "endLine": 600
+          }
+        }
+      ],
+      "lastModified": 1762811121810,
       "model": "claude-sonnet-4-5",
-      "provider": "anthropic"
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 10952
     },
     "project-docs\\batch-runs.md": {
       "fileHash": "450af3da831186ac0319552e5d9c6c897759cfeaa988796620618a2f4b50cd6e",
@@ -681,11 +1051,14 @@
       "provider": "anthropic"
     },
     "data\\dso_exclusions.json": {
-      "fileHash": "3a52570a8304fda7537cb795eadd90995132dab1d4fbcc23a77b972c85cbd73f",
+      "fileHash": "a509e953638bf31fd6abb3b5a1d0d5f5d84c0c090f0c9e5d068526a54063bfaf",
       "suggestions": [],
-      "lastModified": 1762450480154,
+      "lastModified": 1762811113480,
       "model": "claude-sonnet-4-5",
-      "provider": "anthropic"
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 683
     },
     "project-docs\\deployment-troubleshooting.md": {
       "fileHash": "fdb4ffa1ee28e8700b680f4d8812d9098b91b11b789374266fb787a8f6d1c1a1",
@@ -770,6 +1143,249 @@
       "lastModified": 1762450480152,
       "model": "claude-sonnet-4-5",
       "provider": "anthropic"
+    },
+    "app\\api\\save-excluded-job\\route.ts": {
+      "fileHash": "21994912062c5bbca2adeed9095c6b222fef5976ffd211a3a2f38c0fc6eeaa62",
+      "suggestions": [
+        {
+          "file": "app\\api\\save-excluded-job\\route.ts",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Add comprehensive type definitions for request body and database schema",
+          "description": "The request body is destructured without type validation, which can lead to runtime errors if unexpected data is received. Similarly, the database insert uses an object literal without type checking. This violates TypeScript strict mode principles and makes the code fragile.",
+          "suggestion": "Define interfaces for the request body and database record to ensure type safety throughout the function. Use runtime validation with Zod or similar library for API inputs. This prevents silent failures and provides better IDE autocomplete.",
+          "code": {
+            "before": "export async function POST(req: Request) {\n  try {\n    const body = await req.json();\n    const {\n      correlation_id,\n      practice_name,\n      query,\n      exclusion_type,\n      exclusion_reason,\n      detected_domain,\n      dso_name,\n    } = body;",
+            "after": "import { z } from 'zod';\n\nconst ExcludedJobRequestSchema = z.object({\n  correlation_id: z.string(),\n  practice_name: z.string(),\n  query: z.string(),\n  exclusion_type: z.enum(['DSO', 'EDU', 'GOV']),\n  exclusion_reason: z.string(),\n  detected_domain: z.string().optional(),\n  dso_name: z.string().optional(),\n});\n\ntype ExcludedJobRequest = z.infer<typeof ExcludedJobRequestSchema>;\n\ninterface EnrichmentJobInsert {\n  correlation_id: string;\n  run_user_id: string;\n  input_customer_name: string;\n  input_street_address: string;\n  input_city: string;\n  input_state: string;\n  overall_job_status: 'excluded';\n  cohort: 'DSO' | 'Education' | 'Government';\n  exclusion_reason: string;\n  url_worker_resulting_url: string | null;\n  created_at: string;\n}\n\nexport async function POST(req: Request) {\n  try {\n    const body = await req.json();\n    const validationResult = ExcludedJobRequestSchema.safeParse(body);\n    \n    if (!validationResult.success) {\n      return new Response(\n        JSON.stringify({\n          success: false,\n          error: 'Invalid request data',\n          details: validationResult.error.format(),\n        }),\n        { status: 400 }\n      );\n    }\n    \n    const {\n      correlation_id,\n      practice_name,\n      query,\n      exclusion_type,\n      exclusion_reason,\n      detected_domain,\n    } = validationResult.data;",
+            "startLine": 3,
+            "endLine": 15
+          }
+        },
+        {
+          "file": "app\\api\\save-excluded-job\\route.ts",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Extract address parsing logic into a separate utility function with proper types",
+          "description": "The inline address parsing logic is complex, hard to test, and uses regex without proper error handling. The comment 'Simple parsing - you may want to improve this' indicates technical debt. This logic is likely duplicated elsewhere and lacks comprehensive testing.",
+          "suggestion": "Extract the parsing logic into a pure function with clear input/output types. This improves testability, reusability, and maintainability. Add proper validation and handle edge cases explicitly.",
+          "code": {
+            "before": "    // Parse the query to extract address components (similar to backend logic)\n    const addressMatch = query.match(/^(.*?)(\\d.*)$/);\n    let streetAddress = \"\";\n    let city = \"\";\n    let state = \"\";\n\n    if (addressMatch) {\n      const addressPart = addressMatch[2].trim();\n      // Simple parsing - you may want to improve this\n      const parts = addressPart.split(\",\").map((p: string) => p.trim());\n\n      if (parts.length >= 1) {\n        streetAddress = parts[0];\n      }\n      if (parts.length >= 2) {\n        city = parts[1];\n      }\n      if (parts.length >= 3) {\n        // Extract state from \"State ZIP\" format\n        const stateZip = parts[2].split(\" \");\n        state = stateZip[0];\n      }\n    }",
+            "after": "interface ParsedAddress {\n  streetAddress: string;\n  city: string;\n  state: string;\n}\n\nfunction parseQueryToAddress(query: string): ParsedAddress {\n  const defaultResult: ParsedAddress = {\n    streetAddress: query,\n    city: '',\n    state: '',\n  };\n\n  const addressMatch = query.match(/^(.*?)(\\d.*)$/);\n  \n  if (!addressMatch?.[2]) {\n    return defaultResult;\n  }\n\n  const addressPart = addressMatch[2].trim();\n  const parts = addressPart.split(',').map(p => p.trim());\n\n  const [street = query, city = '', stateZip = ''] = parts;\n  const state = stateZip.split(' ')[0] ?? '';\n\n  return {\n    streetAddress: street,\n    city,\n    state,\n  };\n}\n\n// In the main function:\nconst { streetAddress, city, state } = parseQueryToAddress(query);",
+            "startLine": 32,
+            "endLine": 54
+          }
+        },
+        {
+          "file": "app\\api\\save-excluded-job\\route.ts",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Simplify cohort mapping logic with type-safe mapping object",
+          "description": "The nested ternary operator for cohort assignment is hard to read and doesn't handle unexpected exclusion_type values gracefully. If a new type is added, this logic could silently fail or produce incorrect results.",
+          "suggestion": "Use a mapping object with exhaustive type checking to make the relationship explicit and maintainable. This provides better type safety and makes adding new types easier.",
+          "code": {
+            "before": "        cohort: exclusion_type === \"DSO\" ? \"DSO\" : exclusion_type === \"EDU\" ? \"Education\" : \"Government\",",
+            "after": "type CohortType = 'DSO' | 'Education' | 'Government';\n\nconst EXCLUSION_TYPE_TO_COHORT: Record<ExcludedJobRequest['exclusion_type'], CohortType> = {\n  DSO: 'DSO',\n  EDU: 'Education',\n  GOV: 'Government',\n} as const;\n\n// In the insert:\n        cohort: EXCLUSION_TYPE_TO_COHORT[exclusion_type],",
+            "startLine": 63,
+            "endLine": 63
+          }
+        },
+        {
+          "file": "app\\api\\save-excluded-job\\route.ts",
+          "category": "optimization",
+          "severity": "medium",
+          "title": "Use NextResponse for better type safety and cleaner response handling",
+          "description": "Using raw Response constructors is verbose and error-prone. Next.js provides NextResponse which offers better type safety, automatic content-type headers, and cleaner syntax. The current approach requires repetitive JSON.stringify calls and manual header configuration.",
+          "suggestion": "Replace Response constructors with NextResponse.json() for cleaner code and automatic JSON serialization. This reduces boilerplate and ensures consistent response formatting.",
+          "code": {
+            "before": "import { createRouteHandlerClient } from \"@/utils/supabase\";\n\nexport async function POST(req: Request) {\n  // ...\n    if (!user) {\n      return new Response(\n        JSON.stringify({\n          success: false,\n          error: \"Please sign in to submit jobs\",\n        }),\n        { status: 401 },\n      );\n    }\n  // ...\n    return new Response(\n      JSON.stringify({\n        success: true,\n        data,\n      }),\n      { status: 200 },\n    );",
+            "after": "import { NextResponse } from 'next/server';\nimport { createRouteHandlerClient } from '@/utils/supabase';\n\nexport async function POST(req: Request) {\n  // ...\n    if (!user) {\n      return NextResponse.json(\n        {\n          success: false,\n          error: 'Please sign in to submit jobs',\n        },\n        { status: 401 }\n      );\n    }\n  // ...\n    return NextResponse.json(\n      {\n        success: true,\n        data,\n      },\n      { status: 200 }\n    );",
+            "startLine": 1,
+            "endLine": 100
+          }
+        },
+        {
+          "file": "app\\api\\save-excluded-job\\route.ts",
+          "category": "bug",
+          "severity": "medium",
+          "title": "Handle Supabase client initialization errors and improve error messages",
+          "description": "The createRouteHandlerClient call could potentially fail, but this isn't handled. Additionally, error responses don't provide enough context for debugging in production. The getUser() call should also handle cases where the session exists but user data is unavailable.",
+          "suggestion": "Add proper error handling for Supabase client initialization and provide more contextual error messages. Consider logging errors with correlation_id for easier debugging in production.",
+          "code": {
+            "before": "    // Get user ID for job association\n    const supabase = createRouteHandlerClient(req);\n    const {\n      data: { user },\n    } = await supabase.auth.getUser();\n\n    if (!user) {\n      return new Response(\n        JSON.stringify({\n          success: false,\n          error: \"Please sign in to submit jobs\",\n        }),\n        { status: 401 },\n      );\n    }",
+            "after": "    // Get user ID for job association\n    const supabase = createRouteHandlerClient(req);\n    \n    const { data: { user }, error: authError } = await supabase.auth.getUser();\n\n    if (authError) {\n      console.error('[save-excluded-job] Auth error:', {\n        correlation_id,\n        error: authError.message,\n      });\n      return NextResponse.json(\n        {\n          success: false,\n          error: 'Authentication failed',\n        },\n        { status: 401 }\n      );\n    }\n\n    if (!user) {\n      console.warn('[save-excluded-job] No user found:', { correlation_id });\n      return NextResponse.json(\n        {\n          success: false,\n          error: 'Please sign in to submit jobs',\n        },\n        { status: 401 }\n      );\n    }",
+            "startLine": 17,
+            "endLine": 31
+          }
+        }
+      ],
+      "lastModified": 1762811109521,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 953
+    },
+    "utils\\domain-detector.ts": {
+      "fileHash": "985b50c8bae00e874fd553deda0bb5a53cdf8ff45bda2f689cce6b3f18cb9b3a",
+      "suggestions": [
+        {
+          "file": "utils\\domain-detector.ts",
+          "category": "refactor",
+          "severity": "high",
+          "title": "Remove console.log in production code and improve error handling",
+          "description": "The extractDomain function contains a console.log statement that will pollute production logs and potentially expose sensitive information. Error handling should use proper logging infrastructure or be silently handled with optional telemetry.",
+          "suggestion": "Remove console.log and either handle errors silently or use a proper logging service. Consider returning an error state or using a structured logging approach for debugging in development only.",
+          "code": {
+            "before": "  } catch (error) {\n    // URL parsing failed, continue to return null\n    console.log(\"Domain extraction failed:\", error);\n  }\n\n  return null;",
+            "after": "  } catch (error) {\n    // URL parsing failed, continue to return null\n    if (process.env.NODE_ENV === 'development') {\n      console.warn('[Domain Detector] Failed to extract domain:', error instanceof Error ? error.message : 'Unknown error');\n    }\n    // Could add telemetry here for production monitoring\n  }\n\n  return null;",
+            "startLine": 67,
+            "endLine": 72
+          }
+        },
+        {
+          "file": "utils\\domain-detector.ts",
+          "category": "optimization",
+          "severity": "medium",
+          "title": "Compile regex patterns once at module level for better performance",
+          "description": "The extractDomain function creates new RegExp objects on every invocation. These regex patterns are static and should be compiled once at module initialization to avoid repeated compilation overhead, especially if this function is called frequently.",
+          "suggestion": "Move regex patterns to module-level constants. This reduces garbage collection pressure and improves performance when the function is called repeatedly during form validation or batch processing.",
+          "code": {
+            "before": "export function extractDomain(input: string): string | null {\n  if (!input || typeof input !== \"string\") {\n    return null;\n  }\n\n  const trimmed = input.trim().toLowerCase();\n\n  try {\n    // ... URL handling code ...\n\n    // Check if input looks like a domain (contains dots, no spaces)\n    if (trimmed.includes(\".\") && !trimmed.includes(\" \")) {\n      // Remove protocol if present\n      const withoutProtocol = trimmed.replace(/^(https?:\\/\\/)/, \"\");\n\n      // Extract just the domain (remove path, query, hash)\n      const domainPart = withoutProtocol.split(\"/\")[0].split(\"?\")[0].split(\"#\")[0];\n\n      // Basic domain validation (has at least one dot and valid characters)\n      if (/^[a-z0-9.-]+\\.[a-z]{2,}$/.test(domainPart)) {\n        return domainPart;\n      }\n    }\n\n    // Try to extract domain from text (e.g., \"visit us at heartland.com\")\n    const domainPattern = /(?:https?:\\/\\/)?(?:www\\.)?([a-z0-9.-]+\\.[a-z]{2,})/i;\n    const match = trimmed.match(domainPattern);\n    if (match && match[1]) {\n      return match[1].toLowerCase();\n    }",
+            "after": "// Compile regex patterns once at module level\nconst PROTOCOL_REGEX = /^(https?:\\/\\/)/;\nconst DOMAIN_VALIDATION_REGEX = /^[a-z0-9.-]+\\.[a-z]{2,}$/;\nconst DOMAIN_EXTRACTION_REGEX = /(?:https?:\\/\\/)?(?:www\\.)?([a-z0-9.-]+\\.[a-z]{2,})/i;\n\nexport function extractDomain(input: string): string | null {\n  if (!input || typeof input !== \"string\") {\n    return null;\n  }\n\n  const trimmed = input.trim().toLowerCase();\n\n  try {\n    // ... URL handling code ...\n\n    // Check if input looks like a domain (contains dots, no spaces)\n    if (trimmed.includes(\".\") && !trimmed.includes(\" \")) {\n      // Remove protocol if present\n      const withoutProtocol = trimmed.replace(PROTOCOL_REGEX, \"\");\n\n      // Extract just the domain (remove path, query, hash)\n      const domainPart = withoutProtocol.split(\"/\")[0].split(\"?\")[0].split(\"#\")[0];\n\n      // Basic domain validation (has at least one dot and valid characters)\n      if (DOMAIN_VALIDATION_REGEX.test(domainPart)) {\n        return domainPart;\n      }\n    }\n\n    // Try to extract domain from text (e.g., \"visit us at heartland.com\")\n    const match = trimmed.match(DOMAIN_EXTRACTION_REGEX);\n    if (match?.[1]) {\n      return match[1].toLowerCase();\n    }",
+            "startLine": 34,
+            "endLine": 64
+          }
+        },
+        {
+          "file": "utils\\domain-detector.ts",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Use modern optional chaining and reduce redundant string operations",
+          "description": "The code has multiple redundant type checks, toLowerCase() calls, and can benefit from optional chaining. The extractDomain function calls .toLowerCase() twice on the same input, and there are defensive type checks that TypeScript's type system already handles.",
+          "suggestion": "Leverage TypeScript's type system to eliminate redundant runtime checks, use optional chaining for cleaner null handling, and optimize string operations to avoid duplicate work.",
+          "code": {
+            "before": "export function extractDomain(input: string): string | null {\n  if (!input || typeof input !== \"string\") {\n    return null;\n  }\n\n  const trimmed = input.trim().toLowerCase();\n\n  try {\n    // ... code ...\n    const match = trimmed.match(domainPattern);\n    if (match && match[1]) {\n      return match[1].toLowerCase();\n    }",
+            "after": "export function extractDomain(input: string): string | null {\n  // TypeScript already ensures input is a string, just check for empty\n  const trimmed = input?.trim().toLowerCase();\n  if (!trimmed) {\n    return null;\n  }\n\n  try {\n    // ... code ...\n    const match = trimmed.match(DOMAIN_EXTRACTION_REGEX);\n    // Already lowercase from trimmed, no need to call it again\n    // Optional chaining handles undefined gracefully\n    return match?.[1] ?? null;",
+            "startLine": 34,
+            "endLine": 65
+          }
+        },
+        {
+          "file": "utils\\domain-detector.ts",
+          "category": "refactor",
+          "severity": "medium",
+          "title": "Consolidate domain parsing logic to reduce code duplication",
+          "description": "The extractDomain function has multiple paths that do similar domain extraction with different approaches. This creates maintenance burden and potential inconsistency. The function would benefit from a more unified parsing strategy.",
+          "suggestion": "Create a single, streamlined parsing flow that handles all cases more elegantly. Use early returns and consolidate the domain extraction logic to make it more maintainable and testable.",
+          "code": {
+            "before": "export function extractDomain(input: string): string | null {\n  const trimmed = input?.trim().toLowerCase();\n  if (!trimmed) {\n    return null;\n  }\n\n  try {\n    // Try parsing as URL first\n    if (trimmed.startsWith(\"http://\") || trimmed.startsWith(\"https://\")) {\n      const url = new URL(trimmed);\n      return url.hostname;\n    }\n\n    // Check if input looks like a domain (contains dots, no spaces)\n    if (trimmed.includes(\".\") && !trimmed.includes(\" \")) {\n      const withoutProtocol = trimmed.replace(PROTOCOL_REGEX, \"\");\n      const domainPart = withoutProtocol.split(\"/\")[0].split(\"?\")[0].split(\"#\")[0];\n\n      if (DOMAIN_VALIDATION_REGEX.test(domainPart)) {\n        return domainPart;\n      }\n    }\n\n    // Try to extract domain from text\n    const match = trimmed.match(DOMAIN_EXTRACTION_REGEX);\n    return match?.[1] ?? null;\n  } catch (error) {\n    return null;\n  }\n}",
+            "after": "const PROTOCOL_REGEX = /^(https?:\\/\\/)/;\nconst DOMAIN_VALIDATION_REGEX = /^[a-z0-9.-]+\\.[a-z]{2,}$/;\nconst DOMAIN_EXTRACTION_REGEX = /(?:https?:\\/\\/)?(?:www\\.)?([a-z0-9.-]+\\.[a-z]{2,})/i;\n\n/**\n * Normalizes input and extracts domain portion\n */\nfunction normalizeToDomain(input: string): string {\n  const withoutProtocol = input.replace(PROTOCOL_REGEX, \"\");\n  // Remove path, query, and hash\n  return withoutProtocol.split(\"/\")[0].split(\"?\")[0].split(\"#\")[0];\n}\n\nexport function extractDomain(input: string): string | null {\n  const trimmed = input?.trim().toLowerCase();\n  if (!trimmed) return null;\n\n  try {\n    // Try parsing as full URL first (most reliable for valid URLs)\n    if (trimmed.startsWith(\"http://\") || trimmed.startsWith(\"https://\")) {\n      const url = new URL(trimmed);\n      return url.hostname;\n    }\n\n    // For non-URL input, normalize and validate\n    if (trimmed.includes(\".\")) {\n      const normalized = normalizeToDomain(trimmed);\n      \n      // Direct domain format (no spaces)\n      if (!trimmed.includes(\" \") && DOMAIN_VALIDATION_REGEX.test(normalized)) {\n        return normalized;\n      }\n      \n      // Extract from text context (e.g., \"visit us at heartland.com\")\n      const match = trimmed.match(DOMAIN_EXTRACTION_REGEX);\n      if (match?.[1] && DOMAIN_VALIDATION_REGEX.test(match[1])) {\n        return match[1];\n      }\n    }\n  } catch (error) {\n    if (process.env.NODE_ENV === 'development') {\n      console.warn('[Domain Detector] Failed to extract domain:', error instanceof Error ? error.message : 'Unknown error');\n    }\n  }\n\n  return null;\n}",
+            "startLine": 34,
+            "endLine": 72
+          }
+        },
+        {
+          "file": "utils\\domain-detector.ts",
+          "category": "optimization",
+          "severity": "low",
+          "title": "Optimize hasExclusionPattern with early returns and Set lookup",
+          "description": "The hasExclusionPattern function performs a toLowerCase() operation and then uses an array iteration with .some(). For better performance, use a Set for O(1) keyword lookups and implement early returns. This is especially beneficial if the function is called frequently in form validation.",
+          "suggestion": "Convert the DSO keywords array to a Set for faster lookups, and check for .edu pattern before performing expensive string operations. Consider extracting just the domain part for more accurate matching.",
+          "code": {
+            "before": "export function hasExclusionPattern(input: string): boolean {\n  if (!input || typeof input !== \"string\") {\n    return false;\n  }\n\n  const lower = input.toLowerCase();\n\n  // Check for .edu TLD\n  if (lower.includes(\".edu\")) {\n    return true;\n  }\n\n  // Check for common DSO keywords in domain\n  const dsoKeywords = [\n    \"heartland\",\n    \"aspen\",\n    \"pdshealth\",\n    \"smilebrands\",\n    \"mb2dental\",\n  ];\n\n  return dsoKeywords.some((keyword) => lower.includes(keyword));\n}",
+            "after": "// Define DSO keywords as a module-level Set for O(1) lookups\nconst DSO_KEYWORDS = new Set([\n  \"heartland\",\n  \"aspen\",\n  \"pdshealth\",\n  \"smilebrands\",\n  \"mb2dental\",\n]);\n\nexport function hasExclusionPattern(input: string): boolean {\n  const trimmed = input?.trim();\n  if (!trimmed) return false;\n\n  const lower = trimmed.toLowerCase();\n\n  // Early return for .edu TLD (most definitive check)\n  if (lower.includes(\".edu\")) return true;\n\n  // Check for DSO keywords - more efficient with Set\n  return Array.from(DSO_KEYWORDS).some((keyword) => lower.includes(keyword));\n}",
+            "startLine": 149,
+            "endLine": 169
+          }
+        }
+      ],
+      "lastModified": 1762811115494,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 1526
+    },
+    "DSO-EDU-EXCLUSION-IMPLEMENTATION.md": {
+      "fileHash": "b2e9be0cd23d54be45b75a7cc76a6b548f780e71c4d059dea9395d51b7f0abc7",
+      "suggestions": [
+        {
+          "file": "DSO-EDU-EXCLUSION-IMPLEMENTATION.md",
+          "category": "documentation",
+          "severity": "medium",
+          "title": "Add decision rationale and trade-offs section",
+          "description": "The documentation explains 'what' was implemented but lacks critical 'why' for architectural decisions. Understanding trade-offs helps future maintainers make informed changes. For example, the localStorage approach has significant limitations but the rationale for choosing it over database storage isn't explained.",
+          "suggestion": "Add a 'Design Decisions & Trade-offs' section after 'Technical Details' explaining key architectural choices. Document why localStorage was chosen over database storage, why pre-submission detection was preferred over backend filtering, and what alternatives were considered.",
+          "code": {
+            "before": "## Technical Details\n\n### Why Pre-Submission Detection?\n1. **Cost Savings**: Prevents unnecessary OpenAI API calls\n2. **Performance**: No backend processing for excluded practices\n3. **User Experience**: Immediate feedback (no waiting for backend)\n4. **Clean Separation**: Excluded jobs don't clutter enrichment database",
+            "after": "## Technical Details\n\n### Why Pre-Submission Detection?\n1. **Cost Savings**: Prevents unnecessary OpenAI API calls\n2. **Performance**: No backend processing for excluded practices\n3. **User Experience**: Immediate feedback (no waiting for backend)\n4. **Clean Separation**: Excluded jobs don't clutter enrichment database\n\n## Design Decisions & Trade-offs\n\n### localStorage vs Database Storage\n**Decision**: Store excluded jobs in localStorage only\n**Rationale**:\n- Faster implementation (no database schema changes)\n- No backend API needed for excluded jobs\n- Prevents cluttering enrichment database with non-enriched records\n**Trade-offs**:\n- ❌ Data lost on cache clear\n- ❌ No cross-device persistence\n- ❌ No analytics on excluded practices\n- ✅ Simpler architecture\n- ✅ Zero backend load\n**Future Migration Path**: If analytics needed, add `excluded_jobs` table with `exclusion_type`, `detected_at`, `reason` fields",
+            "startLine": 122,
+            "endLine": 130
+          }
+        },
+        {
+          "file": "DSO-EDU-EXCLUSION-IMPLEMENTATION.md",
+          "category": "documentation",
+          "severity": "high",
+          "title": "Add error handling and edge case documentation",
+          "description": "The documentation doesn't cover error scenarios or edge cases. What happens if localStorage is full? What if domain detection fails? What if the DSO list is malformed? These scenarios will occur in production and need documented handling strategies.",
+          "suggestion": "Add an 'Error Handling & Edge Cases' section documenting failure modes and their handling. Include scenarios like localStorage quota exceeded, malformed input, missing DSO data file, network failures during redirect, and race conditions.",
+          "code": {
+            "before": "## Known Limitations\n\n1. **localStorage Only**: Excluded jobs only stored locally, not in database\n   - Won't persist across devices\n   - Won't appear in admin views\n   - Browser cache clear will lose history",
+            "after": "## Error Handling & Edge Cases\n\n### localStorage Failures\n- **Quota Exceeded**: Silently fails to store, but exclusion still detected and displayed\n- **Fallback**: Alert card shows without historical data\n- **User Impact**: Can still see exclusion, just no history\n\n### Malformed Input\n- **Empty/Null Input**: `detectExclusion()` returns null, proceeds to normal flow\n- **Invalid URLs**: Domain extraction returns null, pattern matching used as fallback\n- **Missing DSO File**: Detection fails gracefully, logs error, proceeds to backend\n\n### Race Conditions\n- **Multiple Submissions**: Each gets unique excluded_id with timestamp\n- **Concurrent localStorage Writes**: Last write wins (acceptable for exclusions)\n\n### Network/Redirect Issues\n- **Redirect Failure**: User sees loading state, manual refresh needed\n- **localStorage Read Failure**: Shows generic error, suggests re-submission\n\n## Known Limitations\n\n1. **localStorage Only**: Excluded jobs only stored locally, not in database\n   - Won't persist across devices\n   - Won't appear in admin views\n   - Browser cache clear will lose history\n   - **Mitigation**: Document recovery process for users",
+            "startLine": 238,
+            "endLine": 244
+          }
+        },
+        {
+          "file": "DSO-EDU-EXCLUSION-IMPLEMENTATION.md",
+          "category": "documentation",
+          "severity": "medium",
+          "title": "Add concrete code examples for key integration points",
+          "description": "The documentation describes the data structures and flow but lacks actual code snippets showing how developers would integrate with or modify these components. This makes it harder for new developers to understand the implementation without diving into source files.",
+          "suggestion": "Add a 'Code Examples' section showing actual implementation snippets for common scenarios: how to add a new exclusion type, how to modify the alert UI, how to extend domain detection logic, and how to test new exclusion rules.",
+          "code": {
+            "before": "## Testing\n\n### Test Results\nAll 11 automated tests passed:\n- ✅ DSO detection by domain (Heartland, Aspen, PDS)\n- ✅ DSO detection by practice name\n- ✅ DSO detection from full URLs\n- ✅ EDU detection (.edu TLD)\n- ✅ EDU detection from subdomains\n- ✅ Normal practices correctly NOT excluded\n\n### Test Script\nRun: `node test-detection.js`",
+            "after": "## Code Examples\n\n### Adding a New Exclusion Type (e.g., GOV)\n```typescript\n// In utils/domain-detector.ts\nexport function isGOVDomain(domain: string): boolean {\n  return domain.toLowerCase().endsWith('.gov');\n}\n\nexport function detectExclusion(practiceName: string, input: string) {\n  // ... existing code ...\n  \n  // Add after EDU check\n  if (isGOVDomain(domain)) {\n    return {\n      excluded: true,\n      type: 'GOV' as const,\n      reason: 'Government institution detected',\n      domain\n    };\n  }\n}\n```\n\n### Customizing Alert Display\n```tsx\n// In components/lead-view.tsx\n{exclusionType === 'DSO' && (\n  <Alert variant=\"destructive\">\n    <AlertTitle>DSO Detected: {exclusionDetails?.dsoName}</AlertTitle>\n    <AlertDescription>\n      Custom message for DSO exclusions\n    </AlertDescription>\n  </Alert>\n)}\n```\n\n### Testing New Exclusion Rule\n```javascript\n// Add to test-detection.js\nconst govTest = {\n  input: 'va.gov',\n  practiceName: 'VA Medical Center',\n  expected: 'GOV',\n  description: 'Government domain detection'\n};\n```\n\n## Testing\n\n### Test Results\nAll 11 automated tests passed:\n- ✅ DSO detection by domain (Heartland, Aspen, PDS)\n- ✅ DSO detection by practice name\n- ✅ DSO detection from full URLs\n- ✅ EDU detection (.edu TLD)\n- ✅ EDU detection from subdomains\n- ✅ Normal practices correctly NOT excluded\n\n### Test Script\nRun: `node test-detection.js`",
+            "startLine": 175,
+            "endLine": 184
+          }
+        },
+        {
+          "file": "DSO-EDU-EXCLUSION-IMPLEMENTATION.md",
+          "category": "documentation",
+          "severity": "medium",
+          "title": "Add version control and changelog strategy",
+          "description": "The document has a version number (1.0) but no changelog or versioning strategy. As the feature evolves, tracking what changed, when, and why is critical for maintenance. The 'Future Enhancements' section suggests significant changes are planned.",
+          "suggestion": "Add a 'Changelog' section at the bottom documenting all changes. Include version, date, changes, and migration notes if applicable. Add a 'Versioning Strategy' section explaining when to bump major/minor/patch versions.",
+          "code": {
+            "before": "---\n\n**Implementation Status**: ✅ Complete and Tested\n**Version**: 1.0\n**Last Updated**: 2025-11-06",
+            "after": "## Versioning Strategy\n\n- **Major (X.0.0)**: Breaking changes to detection API or storage format\n- **Minor (1.X.0)**: New exclusion types, new features\n- **Patch (1.0.X)**: Bug fixes, DSO list updates, documentation\n\n## Changelog\n\n### Version 1.0.0 (2025-11-06)\n**Initial Release**\n- ✅ DSO detection via domain and name matching\n- ✅ EDU detection via .edu TLD\n- ✅ Pre-submission detection flow\n- ✅ localStorage-based excluded job storage\n- ✅ Alert card UI for excluded practices\n- ✅ 11 automated tests covering core scenarios\n\n**Files Added**:\n- `utils/domain-detector.ts`\n- `test-detection.js`\n- `DSO-EDU-EXCLUSION-IMPLEMENTATION.md`\n\n**Files Modified**:\n- `app/page.tsx` (pre-submission detection)\n- `app/results/[id]/page.tsx` (excluded job handling)\n- `components/lead-view.tsx` (alert card rendering)\n\n**Migration Notes**: None (initial release)\n\n---\n\n**Implementation Status**: ✅ Complete and Tested\n**Version**: 1.0.0\n**Last Updated**: 2025-11-06",
+            "startLine": 295,
+            "endLine": 298
+          }
+        },
+        {
+          "file": "DSO-EDU-EXCLUSION-IMPLEMENTATION.md",
+          "category": "documentation",
+          "severity": "low",
+          "title": "Add operational monitoring and debugging guide",
+          "description": "The 'Support' section provides basic debugging steps but lacks guidance for production monitoring. How do teams know if exclusion detection is working correctly at scale? What metrics should be tracked? What logs should be monitored?",
+          "suggestion": "Add a 'Monitoring & Observability' section with specific metrics to track, log patterns to watch for, and dashboard queries. Include examples of what normal vs abnormal behavior looks like and how to diagnose common issues in production.",
+          "code": {
+            "before": "## Support\n\nFor issues or questions:\n1. Check browser console for detection logs (🔍, 🚫 emoji markers)\n2. Verify DSO exclusion list: `data/dso_exclusions.json`\n3. Test detection logic: `node test-detection.js`\n4. Review detection utility: `utils/domain-detector.ts`",
+            "after": "## Monitoring & Observability\n\n### Key Metrics to Track\n```javascript\n// Recommended analytics events\nanalytics.track('exclusion_detected', {\n  type: 'DSO' | 'EDU',\n  domain: detectedDomain,\n  dsoName: dsoName, // if DSO\n  timestamp: Date.now()\n});\n\nanalytics.track('exclusion_displayed', {\n  excludedJobId: jobId,\n  loadedFromLocalStorage: true/false\n});\n```\n\n### Log Patterns\n- **Normal**: `🔍 Checking exclusion for: [domain]` → `🚫 Excluded: DSO|EDU`\n- **Warning**: `⚠️ localStorage quota exceeded` (exclusion still works)\n- **Error**: `❌ Failed to load DSO exclusions` (should not happen, check file)\n\n### Health Checks\n- **Daily**: Verify DSO exclusion file accessible: `fetch('/data/dso_exclusions.json')`\n- **Weekly**: Review exclusion rate (should be 5-15% of submissions)\n- **Monthly**: Update DSO list if new major chains identified\n\n### Debugging Production Issues\n\n**Issue**: Exclusions not being detected\n- Check: Browser console for 🔍 logs\n- Check: DSO file loads successfully (Network tab)\n- Check: Domain extraction working (log output)\n\n**Issue**: Alert not displaying\n- Check: localStorage has excluded job data\n- Check: Job ID format is `excluded_*`\n- Check: LeadView receives exclusionType prop\n\n**Issue**: High false positive rate\n- Review: Recent DSO list changes\n- Check: Domain matching logic (may be too broad)\n- Validate: Test suite still passing\n\n## Support\n\nFor issues or questions:\n1. Check browser console for detection logs (🔍, 🚫 emoji markers)\n2. Verify DSO exclusion list: `data/dso_exclusions.json`\n3. Test detection logic: `node test-detection.js`\n4. Review detection utility: `utils/domain-detector.ts`\n5. Check monitoring dashboard for exclusion metrics",
+            "startLine": 276,
+            "endLine": 281
+          }
+        }
+      ],
+      "lastModified": 1762811127650,
+      "model": "claude-sonnet-4-5",
+      "provider": "anthropic",
+      "promptVersion": "2.1.0",
+      "contextHash": "6d9de1b6c2d72df0",
+      "tokenCount": 2387
     }
   }
 }
