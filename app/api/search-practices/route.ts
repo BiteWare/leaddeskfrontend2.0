@@ -105,7 +105,7 @@ export async function POST(req: Request) {
     }
 
     // Try to split query into name + address
-    let companyName = query.trim();
+    // companyName already declared above for exclusion check
     let addr = address || "";
 
     // If no explicit address, attempt to split query by first digit
