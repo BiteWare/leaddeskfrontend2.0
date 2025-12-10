@@ -222,12 +222,12 @@
     },
     "government": {
       "enabled": true,
-      "description": "Government entities and facilities",
+      "description": "Government entities, military facilities, and non-profit organizations",
       "matchingRules": {
         "tldMatch": true,
         "keywordMatch": true
       },
-      "tlds": [".gov", ".mil"],
+      "tlds": [".gov", ".mil", ".org"],
       "keywords": [
         "veterans affairs",
         "va medical",
@@ -307,7 +307,7 @@
   "notes": [
     "DSO exclusions: All major corporate dental organizations are excluded with aliases for name variations",
     ".edu exclusions: Catches ALL .edu domains plus vocational/technical schools and dental assistant programs",
-    ".gov/.mil exclusions: All government and military facilities including VA, IHS, and military branches",
+    ".gov/.mil/.org exclusions: All government, military, and non-profit organization domains including VA, IHS, and military branches",
     "Clinic exclusions: Community health centers, FQHC, non-profit facilities, mobile clinics, and charitable programs"
   ]
 }
