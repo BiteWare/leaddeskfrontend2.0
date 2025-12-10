@@ -53,14 +53,21 @@ export async function POST(req: Request) {
 
     console.log("✅ User authenticated:", user.id);
 
-    // Backend validation: Check for exclusions before submitting to n8n
-    // This prevents bypassing client-side exclusion checks
+    // Parse query into company name and address
+    // Split at first digit to separate "Practice Name 123 Main St" into name + address
     let companyName = query.trim();
-    const nameMatch = companyName.match(/^(.*?)(\d.*)$/);
-    if (nameMatch) {
-      companyName = nameMatch[1].trim();
+    let addr = address || "";
+
+    if (!addr) {
+      const match = query.trim().match(/^(.*?)(\d.*)$/);
+      if (match) {
+        companyName = match[1].trim();
+        addr = match[2].trim();
+      }
     }
 
+    // Backend validation: Check for exclusions before submitting to n8n
+    // This prevents bypassing client-side exclusion checks
     const exclusionCheck = checkMasterExclusion(companyName, query);
 
     if (exclusionCheck.isExcluded) {
@@ -102,19 +109,6 @@ export async function POST(req: Request) {
         }),
         { status: 500 },
       );
-    }
-
-    // Try to split query into name + address
-    // companyName already declared above for exclusion check
-    let addr = address || "";
-
-    // If no explicit address, attempt to split query by first digit
-    if (!addr) {
-      const match = companyName.match(/^(.*?)(\d.*)$/);
-      if (match) {
-        companyName = match[1].trim();
-        addr = match[2].trim();
-      }
     }
 
     // Submit job to n8n dispatcher
