@@ -101,8 +101,11 @@ export function transformScraperOutputToLeadData(
     ) || [];
 
   const hygienists =
-    scraperOutput.staff_list?.filter((s: any) =>
-      s.role?.toLowerCase().includes("hygienist"),
+    scraperOutput.staff_list?.filter(
+      (s: any) =>
+        s.role?.toLowerCase().includes("hygienist") ||
+        s.role?.toLowerCase().includes("rdh") ||
+        s.credentials?.toLowerCase().includes("rdh"),
     ) || [];
 
   // Enhanced location parsing function
