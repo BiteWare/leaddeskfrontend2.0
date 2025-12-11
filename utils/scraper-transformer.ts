@@ -89,13 +89,15 @@ export function transformScraperOutputToLeadData(
     };
   }
 
-  // Count staff by role
+  // Count staff by role or credentials (DDS/DMD = dentist)
   const dentists =
     scraperOutput.staff_list?.filter(
       (s: any) =>
         s.role?.toLowerCase().includes("dentist") ||
         s.role?.toLowerCase().includes("dds") ||
-        s.role?.toLowerCase().includes("dmd"),
+        s.role?.toLowerCase().includes("dmd") ||
+        s.credentials?.toLowerCase().includes("dds") ||
+        s.credentials?.toLowerCase().includes("dmd"),
     ) || [];
 
   const hygienists =
