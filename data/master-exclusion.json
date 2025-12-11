@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "lastUpdated": "2025-11-11T00:00:00Z",
+  "lastUpdated": "2025-12-11T00:00:00Z",
   "description": "Master exclusion configuration for filtering domains before job submission. This is the single source of truth for all exclusion rules.",
   "categories": {
     "dso": {
@@ -230,7 +230,7 @@
         "tldMatch": true,
         "keywordMatch": true
       },
-      "tlds": [".gov", ".mil", ".org"],
+      "tlds": [".gov", ".mil"],
       "keywords": [
         "veterans affairs",
         "va medical",
@@ -303,14 +303,23 @@
         "fqhc dental",
         "rural health",
         "migrant health",
-        "homeless dental"
+        "homeless dental",
+        "fqhc",
+        "federally qualified",
+        "community health care",
+        "health care center",
+        "health care inc",
+        "health care org",
+        "community care center",
+        "primary care dental"
       ]
     }
   },
   "notes": [
     "DSO exclusions: All major corporate dental organizations are excluded with aliases for name variations",
     ".edu exclusions: Catches ALL .edu domains plus vocational/technical schools and dental assistant programs",
-    ".gov/.mil/.org exclusions: All government, military, and non-profit organization domains including VA, IHS, and military branches",
-    "Clinic exclusions: Community health centers, FQHC, non-profit facilities, mobile clinics, and charitable programs"
+    ".gov/.mil exclusions: All government and military domains including VA, IHS, and military branches",
+    "Clinic exclusions: Community health centers, FQHC, non-profit facilities, mobile clinics, and charitable programs",
+    "Note: .org removed from government tlds - legitimate dental practices can use .org"
   ]
 }
